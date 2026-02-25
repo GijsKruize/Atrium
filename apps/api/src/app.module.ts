@@ -12,6 +12,9 @@ import { MailModule } from "./mail/mail.module";
 import { ClientsModule } from "./clients/clients.module";
 import { OnboardingModule } from "./onboarding/onboarding.module";
 import { UpdatesModule } from "./updates/updates.module";
+import { NotesModule } from "./notes/notes.module";
+import { TasksModule } from "./tasks/tasks.module";
+import { InvoicesModule } from "./invoices/invoices.module";
 import { HealthController } from "./health.controller";
 import { SessionMiddleware } from "./auth/session.middleware";
 import { AllExceptionsFilter } from "./common";
@@ -50,6 +53,9 @@ import { AllExceptionsFilter } from "./common";
     ClientsModule,
     OnboardingModule,
     UpdatesModule,
+    NotesModule,
+    TasksModule,
+    InvoicesModule,
   ],
   controllers: [HealthController],
   providers: [

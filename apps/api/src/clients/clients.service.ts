@@ -4,6 +4,7 @@ import {
   BadRequestException,
 } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
+import { UpdateClientProfileDto } from "./client-profile.dto";
 
 @Injectable()
 export class ClientsService {
@@ -69,6 +70,35 @@ export class ClientsService {
     return this.prisma.member.update({
       where: { id: memberId },
       data: { role: newRole },
+    });
+  }
+
+  async getProfile(userId: string, orgId: string) {
+    const profile = await this.prisma.clientProfile.findUnique({
+      where: { userId_organizationId: { userId, organizationId: orgId } },
+    });
+    return (
+      profile || {
+        userId,
+        organizationId: orgId,
+        company: null,
+        phone: null,
+        address: null,
+        website: null,
+        description: null,
+      }
+    );
+  }
+
+  async updateProfile(
+    userId: string,
+    orgId: string,
+    dto: UpdateClientProfileDto,
+  ) {
+    return this.prisma.clientProfile.upsert({
+      where: { userId_organizationId: { userId, organizationId: orgId } },
+      create: { userId, organizationId: orgId, ...dto },
+      update: dto,
     });
   }
 }

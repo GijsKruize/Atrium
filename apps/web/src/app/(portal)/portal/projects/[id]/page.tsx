@@ -6,7 +6,7 @@ import { apiFetch } from "@/lib/api";
 import { formatBytes, formatRelativeTime } from "@/lib/utils";
 import { ProjectDetailSkeleton } from "@/components/skeletons";
 import { Pagination } from "@/components/pagination";
-import { Download, FileX, MessageSquare } from "lucide-react";
+import { Download, FileX, MessageSquare, CheckSquare, Square, ListTodo } from "lucide-react";
 
 interface FileRecord {
   id: string;
@@ -41,6 +41,15 @@ interface ProjectStatus {
   order: number;
 }
 
+interface TaskRecord {
+  id: string;
+  title: string;
+  description?: string;
+  dueDate?: string | null;
+  completed: boolean;
+  order: number;
+}
+
 interface PaginatedResponse<T> {
   data: T[];
   meta: { total: number; page: number; limit: number; totalPages: number };
@@ -53,6 +62,9 @@ export default function PortalProjectDetailPage() {
   const [updates, setUpdates] = useState<ProjectUpdateRecord[]>([]);
   const [updatesPage, setUpdatesPage] = useState(1);
   const [updatesTotalPages, setUpdatesTotalPages] = useState(1);
+  const [tasks, setTasks] = useState<TaskRecord[]>([]);
+  const [tasksPage, setTasksPage] = useState(1);
+  const [tasksTotalPages, setTasksTotalPages] = useState(1);
   const [error, setError] = useState("");
 
   const loadProject = useCallback(() => {
@@ -72,6 +84,17 @@ export default function PortalProjectDetailPage() {
       .catch(console.error);
   }, [id, updatesPage]);
 
+  const loadTasks = useCallback(() => {
+    apiFetch<PaginatedResponse<TaskRecord>>(
+      `/tasks/mine/${id}?page=${tasksPage}&limit=20`,
+    )
+      .then((res) => {
+        setTasks(res.data);
+        setTasksTotalPages(res.meta.totalPages);
+      })
+      .catch(console.error);
+  }, [id, tasksPage]);
+
   useEffect(() => {
     loadProject();
     apiFetch<ProjectStatus[]>("/projects/statuses")
@@ -82,6 +105,10 @@ export default function PortalProjectDetailPage() {
   useEffect(() => {
     loadUpdates();
   }, [loadUpdates]);
+
+  useEffect(() => {
+    loadTasks();
+  }, [loadTasks]);
 
   const handleDownload = async (fileId: string, filename: string) => {
     try {
@@ -140,6 +167,44 @@ export default function PortalProjectDetailPage() {
               {s.name}
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Tasks */}
+      <div>
+        <h2 className="text-sm font-medium mb-3">Tasks</h2>
+        <div className="space-y-1">
+          {tasks.map((task) => (
+            <div
+              key={task.id}
+              className="flex items-center gap-2 p-2 border border-[var(--border)] rounded-lg"
+            >
+              <span className="shrink-0 text-[var(--primary)]">
+                {task.completed ? <CheckSquare size={18} /> : <Square size={18} />}
+              </span>
+              <span
+                className={`flex-1 text-sm ${task.completed ? "line-through text-[var(--muted-foreground)]" : ""}`}
+              >
+                {task.title}
+              </span>
+              {task.dueDate && (
+                <span className="text-xs px-2 py-0.5 bg-[var(--muted)] rounded-full text-[var(--muted-foreground)]">
+                  {new Date(task.dueDate).toLocaleDateString()}
+                </span>
+              )}
+            </div>
+          ))}
+          {tasks.length === 0 && (
+            <div className="text-center py-6">
+              <ListTodo size={32} className="mx-auto text-[var(--muted-foreground)] mb-2" />
+              <p className="text-sm text-[var(--muted-foreground)]">
+                No tasks yet.
+              </p>
+            </div>
+          )}
+        </div>
+        <div className="mt-3">
+          <Pagination page={tasksPage} totalPages={tasksTotalPages} onPageChange={setTasksPage} />
         </div>
       </div>
 

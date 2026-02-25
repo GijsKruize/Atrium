@@ -4,6 +4,14 @@ import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { useToast } from "@/components/toast";
 
+interface ClientProfile {
+  company?: string;
+  phone?: string;
+  address?: string;
+  website?: string;
+  description?: string;
+}
+
 export default function PortalSettingsPage() {
   const { success, error: showError } = useToast();
   const [name, setName] = useState("");
@@ -14,6 +22,10 @@ export default function PortalSettingsPage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
+  // Profile fields
+  const [profile, setProfile] = useState<ClientProfile>({});
+  const [profileLoading, setProfileLoading] = useState(true);
+
   useEffect(() => {
     apiFetch<{ user: { name: string } }>("/auth/get-session")
       .then((session) => {
@@ -21,6 +33,12 @@ export default function PortalSettingsPage() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
+    apiFetch<ClientProfile>("/clients/me/profile")
+      .then((p) => {
+        setProfile(p);
+        setProfileLoading(false);
+      })
+      .catch(() => setProfileLoading(false));
   }, []);
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
@@ -60,6 +78,21 @@ export default function PortalSettingsPage() {
     } catch (err) {
       showError(
         err instanceof Error ? err.message : "Failed to change password",
+      );
+    }
+  };
+
+  const handleUpdateClientProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await apiFetch("/clients/me/profile", {
+        method: "PUT",
+        body: JSON.stringify(profile),
+      });
+      success("Profile updated");
+    } catch (err) {
+      showError(
+        err instanceof Error ? err.message : "Failed to update profile",
       );
     }
   };
@@ -143,6 +176,78 @@ export default function PortalSettingsPage() {
             Change Password
           </button>
         </form>
+      </div>
+
+      {/* Client Profile Section */}
+      <div className="max-w-md">
+        <h2 className="text-sm font-medium mb-3">Your Profile</h2>
+        {profileLoading ? (
+          <div>Loading...</div>
+        ) : (
+          <form onSubmit={handleUpdateClientProfile} className="space-y-3">
+            <div>
+              <label className="text-sm text-[var(--muted-foreground)]">
+                Company
+              </label>
+              <input
+                type="text"
+                value={profile.company || ""}
+                onChange={(e) => setProfile({ ...profile, company: e.target.value })}
+                className="w-full mt-1 px-3 py-2 border border-[var(--border)] rounded-lg bg-[var(--background)]"
+              />
+            </div>
+            <div>
+              <label className="text-sm text-[var(--muted-foreground)]">
+                Phone
+              </label>
+              <input
+                type="text"
+                value={profile.phone || ""}
+                onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                className="w-full mt-1 px-3 py-2 border border-[var(--border)] rounded-lg bg-[var(--background)]"
+              />
+            </div>
+            <div>
+              <label className="text-sm text-[var(--muted-foreground)]">
+                Address
+              </label>
+              <input
+                type="text"
+                value={profile.address || ""}
+                onChange={(e) => setProfile({ ...profile, address: e.target.value })}
+                className="w-full mt-1 px-3 py-2 border border-[var(--border)] rounded-lg bg-[var(--background)]"
+              />
+            </div>
+            <div>
+              <label className="text-sm text-[var(--muted-foreground)]">
+                Website
+              </label>
+              <input
+                type="text"
+                value={profile.website || ""}
+                onChange={(e) => setProfile({ ...profile, website: e.target.value })}
+                className="w-full mt-1 px-3 py-2 border border-[var(--border)] rounded-lg bg-[var(--background)]"
+              />
+            </div>
+            <div>
+              <label className="text-sm text-[var(--muted-foreground)]">
+                Description
+              </label>
+              <textarea
+                value={profile.description || ""}
+                onChange={(e) => setProfile({ ...profile, description: e.target.value })}
+                rows={3}
+                className="w-full mt-1 px-3 py-2 border border-[var(--border)] rounded-lg bg-[var(--background)] resize-none"
+              />
+            </div>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-[var(--primary)] text-white rounded-lg text-sm font-medium"
+            >
+              Save Profile
+            </button>
+          </form>
+        )}
       </div>
     </div>
   );

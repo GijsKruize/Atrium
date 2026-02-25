@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { apiFetch } from "@/lib/api";
+import { formatCurrency } from "@/lib/format";
 import { StatCardSkeleton } from "@/components/skeletons";
-import { FolderKanban, TrendingUp, CheckCircle } from "lucide-react";
+import { FolderKanban, TrendingUp, CheckCircle, Receipt } from "lucide-react";
 
 interface Project {
   id: string;
@@ -19,6 +20,12 @@ interface Stats {
   completed: number;
 }
 
+interface InvoiceStats {
+  outstandingAmount: number;
+  totalInvoices: number;
+  paidAmount: number;
+}
+
 interface PaginatedResponse<T> {
   data: T[];
   meta: { total: number; page: number; limit: number; totalPages: number };
@@ -26,6 +33,7 @@ interface PaginatedResponse<T> {
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<Stats | null>(null);
+  const [invoiceStats, setInvoiceStats] = useState<InvoiceStats | null>(null);
   const [recent, setRecent] = useState<Project[]>([]);
   const [error, setError] = useState("");
 
@@ -35,6 +43,9 @@ export default function DashboardPage() {
       .catch((err) => setError(err.message || "Failed to load stats"));
     apiFetch<PaginatedResponse<Project>>("/projects?limit=5")
       .then((res) => setRecent(res.data))
+      .catch(console.error);
+    apiFetch<InvoiceStats>("/invoices/stats")
+      .then(setInvoiceStats)
       .catch(console.error);
   }, []);
 
@@ -46,9 +57,10 @@ export default function DashboardPage() {
         <div className="p-4 text-sm text-red-600 bg-red-50 rounded-lg">{error}</div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats === null ? (
           <>
+            <StatCardSkeleton />
             <StatCardSkeleton />
             <StatCardSkeleton />
             <StatCardSkeleton />
@@ -75,6 +87,15 @@ export default function DashboardPage() {
                 Completed
               </div>
               <p className="text-3xl font-bold mt-1">{stats.completed}</p>
+            </div>
+            <div className="p-4 border border-[var(--border)] rounded-lg">
+              <div className="flex items-center gap-2 text-sm text-[var(--muted-foreground)]">
+                <Receipt size={16} />
+                Outstanding
+              </div>
+              <p className="text-3xl font-bold mt-1">
+                {invoiceStats ? formatCurrency(invoiceStats.outstandingAmount) : "$0.00"}
+              </p>
             </div>
           </>
         )}

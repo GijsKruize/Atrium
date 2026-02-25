@@ -22,6 +22,7 @@ import {
 } from "../common";
 import { ClientsService } from "./clients.service";
 import { ChangeRoleDto } from "./clients.dto";
+import { UpdateClientProfileDto } from "./client-profile.dto";
 
 @Controller("clients")
 @UseGuards(AuthGuard, RolesGuard)
@@ -56,7 +57,19 @@ export class ClientsController {
       }),
       this.prisma.member.count({ where }),
     ]);
-    return paginatedResponse(data, total, page, limit);
+
+    const userIds = data.map((m) => m.userId);
+    const profiles = await this.prisma.clientProfile.findMany({
+      where: { userId: { in: userIds }, organizationId: orgId },
+    });
+    const profileMap = new Map(profiles.map((p) => [p.userId, p]));
+
+    const enriched = data.map((m) => ({
+      ...m,
+      profile: profileMap.get(m.userId) || null,
+    }));
+
+    return paginatedResponse(enriched, total, page, limit);
   }
 
   @Get("invitations")
@@ -71,6 +84,42 @@ export class ClientsController {
       ...inv,
       inviteLink: `${webUrl}/accept-invite?id=${inv.id}`,
     }));
+  }
+
+  @Get("me/profile")
+  async getMyProfile(
+    @CurrentUser("id") userId: string,
+    @CurrentOrg("id") orgId: string,
+  ) {
+    return this.clientsService.getProfile(userId, orgId);
+  }
+
+  @Put("me/profile")
+  async updateMyProfile(
+    @CurrentUser("id") userId: string,
+    @CurrentOrg("id") orgId: string,
+    @Body() dto: UpdateClientProfileDto,
+  ) {
+    return this.clientsService.updateProfile(userId, orgId, dto);
+  }
+
+  @Get(":id/profile")
+  @Roles("owner", "admin")
+  async getClientProfile(
+    @Param("id") userId: string,
+    @CurrentOrg("id") orgId: string,
+  ) {
+    return this.clientsService.getProfile(userId, orgId);
+  }
+
+  @Put(":id/profile")
+  @Roles("owner", "admin")
+  async updateClientProfile(
+    @Param("id") userId: string,
+    @CurrentOrg("id") orgId: string,
+    @Body() dto: UpdateClientProfileDto,
+  ) {
+    return this.clientsService.updateProfile(userId, orgId, dto);
   }
 
   @Delete(":id")

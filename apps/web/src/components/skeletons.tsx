@@ -91,3 +91,18 @@ export function StatCardSkeleton() {
     </div>
   );
 }
+
+export function InvoiceCardSkeleton() {
+  return (
+    <div className="flex items-center justify-between p-3 border border-[var(--border)] rounded-lg">
+      <div className="flex items-center gap-4">
+        <Skeleton className="h-4 w-20" />
+        <Skeleton className="h-4 w-32" />
+      </div>
+      <div className="flex items-center gap-4">
+        <Skeleton className="h-4 w-16" />
+        <Skeleton className="h-6 w-16 rounded-full" />
+      </div>
+    </div>
+  );
+}

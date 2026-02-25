@@ -63,6 +63,18 @@ export default async function PortalLayout({
         )}
         <span className="font-semibold flex-1">Client Portal</span>
         <Link
+          href="/portal"
+          className="text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+        >
+          Projects
+        </Link>
+        <Link
+          href="/portal/invoices"
+          className="text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+        >
+          Invoices
+        </Link>
+        <Link
           href="/portal/settings"
           className="text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
         >
