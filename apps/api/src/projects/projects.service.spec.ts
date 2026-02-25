@@ -6,6 +6,7 @@ const mockPrisma = {
   project: {
     findMany: mock(() => Promise.resolve([])),
     findFirst: mock(() => Promise.resolve(null)),
+    count: mock(() => Promise.resolve(0)),
     findUnique: mock((args: any) =>
       Promise.resolve({ id: args.where.id, name: "Test", organizationId: "org-1", clients: [] }),
     ),
@@ -47,9 +48,12 @@ describe("ProjectsService", () => {
       { id: "1", name: "Test", organizationId: "org-1", clients: [] },
     ];
     mockPrisma.project.findMany.mockReturnValue(Promise.resolve(projects));
+    mockPrisma.project.count = mock(() => Promise.resolve(1));
 
-    const result = await service.findAll("org-1");
-    expect(result).toEqual(projects);
+    const result = await service.findAll("org-1", {});
+    expect(result.data).toEqual(projects);
+    expect(result.meta.total).toBe(1);
+    expect(result.meta.page).toBe(1);
   });
 
   it("findOne throws NotFoundException when not found", async () => {
@@ -99,5 +103,51 @@ describe("ProjectsService", () => {
     expect(mockPrisma.project.deleteMany).toHaveBeenCalledWith({
       where: { id: "1", organizationId: "org-1" },
     });
+  });
+
+  it("findOneByClient throws NotFoundException when project is archived", async () => {
+    // The service queries with archivedAt: null — an archived project is excluded
+    // at the database layer, so Prisma returns null for it.
+    mockPrisma.project.findFirst.mockReturnValue(Promise.resolve(null));
+
+    try {
+      await service.findOneByClient("proj-archived", "user-client", "org-1");
+      expect(true).toBe(false); // must not reach
+    } catch (e) {
+      expect(e).toBeInstanceOf(NotFoundException);
+      expect((e as NotFoundException).message).toBe("Project not found");
+    }
+
+    // Confirm the query enforces archivedAt: null so archived projects are invisible
+    expect(mockPrisma.project.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ archivedAt: null }),
+      }),
+    );
+  });
+
+  it("findOneByClient returns a non-archived project the client belongs to", async () => {
+    const project = {
+      id: "proj-active",
+      name: "Active Project",
+      organizationId: "org-1",
+      archivedAt: null,
+      files: [],
+    };
+    mockPrisma.project.findFirst.mockReturnValue(Promise.resolve(project));
+
+    const result = await service.findOneByClient("proj-active", "user-client", "org-1");
+
+    expect(result).toEqual(project);
+    expect(mockPrisma.project.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          id: "proj-active",
+          organizationId: "org-1",
+          archivedAt: null,
+          clients: { some: { userId: "user-client" } },
+        }),
+      }),
+    );
   });
 });

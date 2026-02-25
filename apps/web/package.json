@@ -7,11 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "bun test",
+    "test": "echo 'No unit tests yet'",
     "clean": "rm -rf .next"
   },
   "dependencies": {
-    "@next/swc-darwin-x64": "15.5.12",
     "@atrium/shared": "workspace:*",
     "autoprefixer": "^10.4.24",
     "class-variance-authority": "^0.7.1",

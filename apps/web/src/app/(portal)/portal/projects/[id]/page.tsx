@@ -4,6 +4,9 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 import { formatBytes, formatRelativeTime } from "@/lib/utils";
+import { ProjectDetailSkeleton } from "@/components/skeletons";
+import { Pagination } from "@/components/pagination";
+import { Download, FileX, MessageSquare } from "lucide-react";
 
 interface FileRecord {
   id: string;
@@ -38,29 +41,47 @@ interface ProjectStatus {
   order: number;
 }
 
+interface PaginatedResponse<T> {
+  data: T[];
+  meta: { total: number; page: number; limit: number; totalPages: number };
+}
+
 export default function PortalProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [project, setProject] = useState<Project | null>(null);
   const [statuses, setStatuses] = useState<ProjectStatus[]>([]);
   const [updates, setUpdates] = useState<ProjectUpdateRecord[]>([]);
+  const [updatesPage, setUpdatesPage] = useState(1);
+  const [updatesTotalPages, setUpdatesTotalPages] = useState(1);
+  const [error, setError] = useState("");
 
   const loadProject = useCallback(() => {
-    apiFetch<Project>(`/projects/mine/${id}`).then(setProject).catch(console.error);
+    apiFetch<Project>(`/projects/mine/${id}`)
+      .then(setProject)
+      .catch((err) => setError(err.message || "Failed to load project"));
   }, [id]);
 
   const loadUpdates = useCallback(() => {
-    apiFetch<ProjectUpdateRecord[]>(`/updates/mine/${id}`)
-      .then(setUpdates)
+    apiFetch<PaginatedResponse<ProjectUpdateRecord>>(
+      `/updates/mine/${id}?page=${updatesPage}&limit=10`,
+    )
+      .then((res) => {
+        setUpdates(res.data);
+        setUpdatesTotalPages(res.meta.totalPages);
+      })
       .catch(console.error);
-  }, [id]);
+  }, [id, updatesPage]);
 
   useEffect(() => {
     loadProject();
-    loadUpdates();
     apiFetch<ProjectStatus[]>("/projects/statuses")
       .then(setStatuses)
       .catch(console.error);
-  }, [loadProject, loadUpdates]);
+  }, [loadProject]);
+
+  useEffect(() => {
+    loadUpdates();
+  }, [loadUpdates]);
 
   const handleDownload = async (fileId: string, filename: string) => {
     try {
@@ -83,15 +104,16 @@ export default function PortalProjectDetailPage() {
     }
   };
 
-  if (!project) return <div>Loading...</div>;
+  if (!project) return <ProjectDetailSkeleton />;
 
-  // Find current status index for pipeline
-  const currentIndex = statuses.findIndex(
-    (s) => s.slug === project.status,
-  );
+  const currentIndex = statuses.findIndex((s) => s.slug === project.status);
 
   return (
     <div className="space-y-8">
+      {error && (
+        <div className="p-4 text-sm text-red-600 bg-red-50 rounded-lg">{error}</div>
+      )}
+
       <div>
         <h1 className="text-2xl font-bold">{project.name}</h1>
         {project.description && (
@@ -150,10 +172,16 @@ export default function PortalProjectDetailPage() {
             );
           })}
           {updates.length === 0 && (
-            <p className="text-sm text-[var(--muted-foreground)] text-center py-4">
-              No updates shared yet.
-            </p>
+            <div className="text-center py-8">
+              <MessageSquare size={32} className="mx-auto text-[var(--muted-foreground)] mb-2" />
+              <p className="text-sm text-[var(--muted-foreground)]">
+                No updates shared yet.
+              </p>
+            </div>
           )}
+        </div>
+        <div className="mt-3">
+          <Pagination page={updatesPage} totalPages={updatesTotalPages} onPageChange={setUpdatesPage} />
         </div>
       </div>
 
@@ -174,16 +202,20 @@ export default function PortalProjectDetailPage() {
               </div>
               <button
                 onClick={() => handleDownload(file.id, file.filename)}
-                className="text-sm text-[var(--primary)] hover:underline"
+                className="flex items-center gap-1.5 text-sm text-[var(--primary)] hover:underline"
               >
+                <Download size={14} />
                 Download
               </button>
             </div>
           ))}
           {project.files.length === 0 && (
-            <p className="text-sm text-[var(--muted-foreground)] text-center py-4">
-              No files shared yet.
-            </p>
+            <div className="text-center py-8">
+              <FileX size={32} className="mx-auto text-[var(--muted-foreground)] mb-2" />
+              <p className="text-sm text-[var(--muted-foreground)]">
+                No files shared yet.
+              </p>
+            </div>
           )}
         </div>
       </div>

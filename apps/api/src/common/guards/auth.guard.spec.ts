@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { AuthGuard } from "./auth.guard";
 import { ExecutionContext, UnauthorizedException } from "@nestjs/common";
+import { Reflector } from "@nestjs/core";
 
 function createMockContext(user: unknown, organization?: unknown): ExecutionContext {
   return {
@@ -20,7 +21,8 @@ function createMockContext(user: unknown, organization?: unknown): ExecutionCont
 }
 
 describe("AuthGuard", () => {
-  const guard = new AuthGuard();
+  const reflector = new Reflector();
+  const guard = new AuthGuard(reflector);
 
   it("allows authenticated requests with organization", async () => {
     const ctx = createMockContext(

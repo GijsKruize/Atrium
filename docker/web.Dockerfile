@@ -17,9 +17,11 @@ RUN bun run --filter @atrium/web build
 
 # Production
 FROM base AS runner
+ENV NODE_ENV=production
 COPY --from=build /app/apps/web/.next/standalone ./
 COPY --from=build /app/apps/web/.next/static ./apps/web/.next/static
 COPY --from=build /app/apps/web/public ./apps/web/public
 
+USER bun
 EXPOSE 3000
 CMD ["bun", "run", "apps/web/server.js"]

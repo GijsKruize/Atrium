@@ -1,12 +1,22 @@
 # Atrium
 
-**Open-source client portal for agencies and freelancers.**
+**A self-hosted client portal for agencies and freelancers.**
+
+Created by [@edgarjc](https://github.com/edgarjc) -- I'm starting a company and building products along the way. When I create something I think others would benefit from, I share it here.
 
 [![License: ELv2](https://img.shields.io/badge/License-ELv2-blue.svg)](https://www.elastic.co/licensing/elastic-license)
 
-## What is Atrium?
+> **Note:** Atrium is licensed under the [Elastic License 2.0](LICENSE), which is source-available but not OSI-approved open source. You can self-host and modify it freely, but you cannot offer it as a managed service to third parties.
 
-Atrium is a self-hosted client portal where agencies and freelancers manage projects, share files, and communicate deliverables. Your clients get a branded portal to track project progress, view updates, and download files -- all under your own domain and branding.
+## Why Atrium?
+
+Most agencies juggle shared drives, spreadsheets, and scattered emails to keep clients in the loop. Atrium replaces all of that with a single branded portal your clients can log into -- no more "can you resend that file?" emails. Unlike managed SaaS platforms, you own the data and host it yourself.
+
+## Screenshots
+
+<!-- Add screenshots of the dashboard and client portal here -->
+<!-- ![Dashboard](docs/screenshots/dashboard.png) -->
+<!-- ![Client Portal](docs/screenshots/portal.png) -->
 
 ## Features
 
@@ -29,116 +39,65 @@ Atrium is a self-hosted client portal where agencies and freelancers manage proj
 | Email     | Resend + React Email        |
 | Monorepo  | Turborepo + Bun             |
 
-## Quick Start
+## Getting Started
+
+### Local Development
 
 **Prerequisites:** [Bun](https://bun.sh) (v1.0+) and [Docker](https://docs.docker.com/get-docker/) (for PostgreSQL).
 
 ```bash
-git clone https://github.com/your-org/atrium.git
+git clone https://github.com/edgarjc/atrium.git
 cd atrium
+bun install
 bun run setup
 bun run dev
 ```
 
-That's it. The `setup` script handles everything:
+This starts the web app at [localhost:3000](http://localhost:3000) and the API at [localhost:3001](http://localhost:3001). The `setup` script handles env files, database, and seed data automatically.
 
-1. Copies `.env.example` to `.env`
-2. Starts PostgreSQL via Docker Compose
-3. Installs all dependencies
-4. Generates the Prisma client
-5. Pushes the database schema
-6. Seeds demo data (sample org, project, and default statuses)
-
-Once running:
-
-| Service  | URL                     |
-|----------|-------------------------|
-| Web app  | http://localhost:3000   |
-| API      | http://localhost:3001   |
-
-## First Use
-
-1. Go to [http://localhost:3000/signup](http://localhost:3000/signup) and create your account and organization
-2. You land in the **dashboard** -- create projects, upload files, manage statuses
-3. Invite clients by email; they access the **client portal** at `/portal`
-
-Clients see only their assigned projects and files, styled with your branding.
-
-## Project Structure
-
-```
-atrium/
-  apps/
-    api/              NestJS REST API
-    web/              Next.js frontend (dashboard + portal)
-  packages/
-    database/         Prisma schema, client, migrations, seed
-    shared/           Shared types, constants, utilities
-    email/            Email templates (React Email)
-  e2e/                Playwright end-to-end tests
-  docker/             Production Dockerfiles
-```
-
-## Environment Variables
-
-All configuration lives in a single `.env` file. See [`.env.example`](.env.example) for the full list.
-
-| Variable             | Description                                      | Default                          |
-|----------------------|--------------------------------------------------|----------------------------------|
-| `DATABASE_URL`       | PostgreSQL connection string                     | `postgresql://atrium:atrium@localhost:5432/atrium` |
-| `BETTER_AUTH_SECRET` | Secret key for auth token signing                | `change-me-in-production`        |
-| `BETTER_AUTH_URL`    | API base URL (used by Better Auth)               | `http://localhost:3001`          |
-| `API_URL`            | API URL                                          | `http://localhost:3001`          |
-| `WEB_URL`            | Web app URL                                      | `http://localhost:3000`          |
-| `STORAGE_PROVIDER`   | File storage backend: `local`, `s3`, `minio`, `r2` | `local`                       |
-| `UPLOAD_DIR`         | Local upload directory (when using local storage) | `./uploads`                     |
-| `S3_ENDPOINT`        | S3-compatible endpoint (for MinIO/R2)            | --                               |
-| `S3_BUCKET`          | Bucket name                                      | `atrium`                         |
-| `S3_ACCESS_KEY`      | S3 access key                                    | --                               |
-| `S3_SECRET_KEY`      | S3 secret key                                    | --                               |
-| `RESEND_API_KEY`     | Resend API key for transactional email           | --                               |
-| `EMAIL_FROM`         | Sender address for outbound email                | `noreply@atrium.local`           |
-| `MAX_FILE_SIZE_MB`   | Maximum upload size in megabytes                 | `50`                             |
-
-## Storage Providers
-
-Set `STORAGE_PROVIDER` in your `.env`:
-
-- **`local`** -- Files saved to `UPLOAD_DIR`. Default for development.
-- **`s3`** -- Amazon S3. Set `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, and `S3_REGION`.
-- **`minio`** -- Self-hosted S3-compatible storage. Set `S3_ENDPOINT` and credentials.
-- **`r2`** -- Cloudflare R2. Set `S3_ENDPOINT`, `S3_BUCKET`, and credentials.
-
-## Docker Production
-
-Run the full stack (PostgreSQL + API + Web) in production with:
+### Docker (Production)
 
 ```bash
+git clone https://github.com/edgarjc/atrium.git
+cd atrium
 docker compose up --build
 ```
 
-This uses `docker-compose.yml` which builds both the API and web app from their respective Dockerfiles and wires them to a PostgreSQL instance. Configure environment variables in the compose file or via a `.env` file.
+For production, override the defaults with your own secrets:
 
-## Scripts Reference
+```bash
+BETTER_AUTH_SECRET=$(openssl rand -base64 32) \
+POSTGRES_PASSWORD=your-secure-password \
+docker compose up --build -d
+```
 
-Run from the repository root with `bun run <script>`.
+### First Use
 
-| Script       | Description                                          |
-|--------------|------------------------------------------------------|
-| `setup`      | One-command bootstrap (env, Docker, deps, DB, seed)  |
-| `dev`        | Start all services in development mode               |
-| `build`      | Build all packages and apps                          |
-| `test`       | Run unit tests across all packages                   |
-| `test:e2e`   | Run Playwright end-to-end tests                      |
-| `test:all`   | Run unit tests + e2e tests                           |
-| `lint`       | Lint all packages                                    |
-| `db:generate`| Regenerate the Prisma client                         |
-| `db:push`    | Push schema changes to the database                  |
-| `db:migrate` | Run Prisma migrations (development)                  |
-| `db:migrate:deploy` | Apply pending migrations (production)          |
-| `db:seed`    | Seed the database with demo data                     |
-| `clean`      | Remove build artifacts                               |
+1. Open [localhost:3000/signup](http://localhost:3000/signup) and create your account
+2. Create projects, upload files, and manage statuses from the **dashboard**
+3. Invite clients by email -- they access the **client portal** at `/portal`
+
+## Documentation
+
+- [Configuration & Environment Variables](docs/configuration.md)
+- [Development Guide & Scripts](docs/development.md)
+- [Security](docs/security.md)
+
+## Contributing
+
+Contributions are welcome! Here's how to get involved:
+
+1. **Open an issue first** -- Whether it's a bug report, feature idea, or improvement, start with a [GitHub Issue](https://github.com/edgarjc/atrium/issues) so we can discuss before you write code.
+2. **Keep PRs focused** -- Small, single-purpose pull requests are easier to review and merge.
+3. **Bug fixes and improvements welcome** -- New features should be discussed in an issue first to make sure they align with the project direction.
+
+## Community & Support
+
+- **Bug reports & feature requests** -- [GitHub Issues](https://github.com/edgarjc/atrium/issues)
+- **Questions & discussions** -- [GitHub Discussions](https://github.com/edgarjc/atrium/discussions)
+
+If you find Atrium useful, consider giving it a star -- it helps others discover the project.
 
 ## License
 
-Atrium is source-available software licensed under the [Elastic License 2.0 (ELv2)](LICENSE).
+Atrium is source-available software licensed under the [Elastic License 2.0 (ELv2)](LICENSE). You are free to use, modify, and self-host Atrium. The license restricts offering it as a managed service to third parties.

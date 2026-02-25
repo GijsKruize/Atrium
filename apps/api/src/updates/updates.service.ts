@@ -11,6 +11,7 @@ import { STORAGE_PROVIDER } from "../files/storage/storage.interface";
 import type { UploadedFile } from "../files/files.service";
 import { randomUUID } from "crypto";
 import type { Response } from "express";
+import { paginationArgs, paginatedResponse } from "../common";
 
 const ALLOWED_IMAGE_TYPES = new Set([
   "image/jpeg",
@@ -77,11 +78,21 @@ export class UpdatesService {
     });
   }
 
-  async findByProject(projectId: string, organizationId: string) {
-    const updates = await this.prisma.projectUpdate.findMany({
-      where: { projectId, organizationId },
-      orderBy: { createdAt: "desc" },
-    });
+  async findByProject(
+    projectId: string,
+    organizationId: string,
+    page = 1,
+    limit = 20,
+  ) {
+    const where = { projectId, organizationId };
+    const [updates, total] = await Promise.all([
+      this.prisma.projectUpdate.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        ...paginationArgs(page, limit),
+      }),
+      this.prisma.projectUpdate.count({ where }),
+    ]);
 
     // Batch-resolve author names
     const authorIds = [...new Set(updates.map((u) => u.authorId))];
@@ -111,13 +122,15 @@ export class UpdatesService {
       }),
     );
 
-    return enriched;
+    return paginatedResponse(enriched, total, page, limit);
   }
 
   async findByProjectForClient(
     projectId: string,
     clientUserId: string,
     organizationId: string,
+    page = 1,
+    limit = 20,
   ) {
     const assignment = await this.prisma.projectClient.findFirst({
       where: { projectId, userId: clientUserId },
@@ -126,7 +139,7 @@ export class UpdatesService {
       throw new ForbiddenException("Not assigned to this project");
     }
 
-    return this.findByProject(projectId, organizationId);
+    return this.findByProject(projectId, organizationId, page, limit);
   }
 
   async remove(id: string, organizationId: string) {

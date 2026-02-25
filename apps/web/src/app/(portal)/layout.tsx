@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { SignOutButton } from "./sign-out-button";
 import { getSession } from "@/lib/auth";
 
@@ -61,6 +62,12 @@ export default async function PortalLayout({
           <img src={logoSrc} alt="Logo" className="h-8" />
         )}
         <span className="font-semibold flex-1">Client Portal</span>
+        <Link
+          href="/portal/settings"
+          className="text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+        >
+          Settings
+        </Link>
         <SignOutButton />
       </header>
       <main className="max-w-4xl mx-auto p-8">{children}</main>

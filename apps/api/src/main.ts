@@ -21,6 +21,14 @@ function loadEnv(filePath: string) {
 loadEnv(resolve(process.cwd(), "../../.env"));
 loadEnv(resolve(process.cwd(), ".env"));
 
+const required = ["DATABASE_URL", "BETTER_AUTH_SECRET"];
+for (const key of required) {
+  if (!process.env[key]) {
+    console.error(`Missing required environment variable: ${key}`);
+    process.exit(1);
+  }
+}
+
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
 import { ValidationPipe } from "@nestjs/common";

@@ -10,6 +10,7 @@ import type { StorageProvider } from "./storage/storage.interface";
 import { STORAGE_PROVIDER } from "./storage/storage.interface";
 import { randomUUID } from "crypto";
 import { extname } from "path";
+import { paginationArgs, paginatedResponse } from "../common";
 
 export interface UploadedFile {
   originalname: string;
@@ -86,11 +87,22 @@ export class FilesService {
     });
   }
 
-  async findByProject(projectId: string, organizationId: string) {
-    return this.prisma.file.findMany({
-      where: { projectId, organizationId },
-      orderBy: { createdAt: "desc" },
-    });
+  async findByProject(
+    projectId: string,
+    organizationId: string,
+    page = 1,
+    limit = 20,
+  ) {
+    const where = { projectId, organizationId };
+    const [data, total] = await Promise.all([
+      this.prisma.file.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        ...paginationArgs(page, limit),
+      }),
+      this.prisma.file.count({ where }),
+    ]);
+    return paginatedResponse(data, total, page, limit);
   }
 
   async download(id: string, organizationId: string) {
@@ -109,7 +121,7 @@ export class FilesService {
     });
     if (!file) throw new NotFoundException("File not found");
 
-    return this.storage.getSignedUrl(file.storageKey);
+    return { url: `/api/files/${id}/download` };
   }
 
   async remove(id: string, organizationId: string) {

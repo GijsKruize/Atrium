@@ -2,9 +2,9 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: atrium
-      POSTGRES_PASSWORD: atrium
-      POSTGRES_DB: atrium
+      POSTGRES_USER: "${POSTGRES_USER:-atrium}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-atrium}"
+      POSTGRES_DB: "${POSTGRES_DB:-atrium}"
     ports:
       - "5432:5432"
     volumes:
@@ -22,14 +22,20 @@ services:
     ports:
       - "3001:3001"
     environment:
-      DATABASE_URL: "postgresql://atrium:atrium@postgres:5432/atrium?schema=public"
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-atrium}:${POSTGRES_PASSWORD:-atrium}@postgres:5432/${POSTGRES_DB:-atrium}?schema=public"
       BETTER_AUTH_SECRET: "${BETTER_AUTH_SECRET:-change-me-in-production}"
-      BETTER_AUTH_URL: "http://api:3001"
-      WEB_URL: "http://localhost:3000"
+      # Must be the public-facing URL where clients reach the API
+      BETTER_AUTH_URL: "${BETTER_AUTH_URL:-http://localhost:3001}"
+      WEB_URL: "${WEB_URL:-http://localhost:3000}"
       STORAGE_PROVIDER: "local"
       UPLOAD_DIR: "/app/uploads"
     volumes:
       - uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     depends_on:
       postgres:
         condition: service_healthy
@@ -42,7 +48,13 @@ services:
       - "3000:3000"
     environment:
       API_URL: "http://api:3001"
-      NEXT_PUBLIC_API_URL: "http://localhost:3001"
+      # Must be the public-facing URL where browsers reach the API
+      NEXT_PUBLIC_API_URL: "${NEXT_PUBLIC_API_URL:-http://localhost:3001}"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     depends_on:
       - api
 

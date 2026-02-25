@@ -1,6 +1,6 @@
 import { MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
-import { APP_GUARD } from "@nestjs/core";
+import { APP_FILTER, APP_GUARD } from "@nestjs/core";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { LoggerModule } from "nestjs-pino";
 import { PrismaModule } from "./prisma/prisma.module";
@@ -14,6 +14,7 @@ import { OnboardingModule } from "./onboarding/onboarding.module";
 import { UpdatesModule } from "./updates/updates.module";
 import { HealthController } from "./health.controller";
 import { SessionMiddleware } from "./auth/session.middleware";
+import { AllExceptionsFilter } from "./common";
 
 @Module({
   imports: [
@@ -52,6 +53,10 @@ import { SessionMiddleware } from "./auth/session.middleware";
   ],
   controllers: [HealthController],
   providers: [
+    {
+      provide: APP_FILTER,
+      useClass: AllExceptionsFilter,
+    },
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,

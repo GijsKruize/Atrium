@@ -6,10 +6,16 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   UseGuards,
 } from "@nestjs/common";
 import { ProjectsService } from "./projects.service";
-import { CreateProjectDto, UpdateProjectDto } from "./projects.dto";
+import {
+  CreateProjectDto,
+  UpdateProjectDto,
+  ProjectListQueryDto,
+  ClientProjectListQueryDto,
+} from "./projects.dto";
 import {
   AuthGuard,
   RolesGuard,
@@ -25,16 +31,20 @@ export class ProjectsController {
 
   @Get()
   @Roles("owner", "admin")
-  findAll(@CurrentOrg("id") orgId: string) {
-    return this.projectsService.findAll(orgId);
+  findAll(
+    @Query() query: ProjectListQueryDto,
+    @CurrentOrg("id") orgId: string,
+  ) {
+    return this.projectsService.findAll(orgId, query);
   }
 
   @Get("mine")
   findMine(
     @CurrentUser("id") userId: string,
     @CurrentOrg("id") orgId: string,
+    @Query() query: ClientProjectListQueryDto,
   ) {
-    return this.projectsService.findByClient(userId, orgId);
+    return this.projectsService.findByClient(userId, orgId, query);
   }
 
   @Get("mine/:id")
@@ -44,6 +54,12 @@ export class ProjectsController {
     @CurrentOrg("id") orgId: string,
   ) {
     return this.projectsService.findOneByClient(id, userId, orgId);
+  }
+
+  @Get("stats")
+  @Roles("owner", "admin")
+  getStats(@CurrentOrg("id") orgId: string) {
+    return this.projectsService.getStats(orgId);
   }
 
   @Get("statuses")
@@ -61,6 +77,18 @@ export class ProjectsController {
   @Roles("owner", "admin")
   create(@Body() dto: CreateProjectDto, @CurrentOrg("id") orgId: string) {
     return this.projectsService.create(dto, orgId);
+  }
+
+  @Post(":id/archive")
+  @Roles("owner", "admin")
+  archive(@Param("id") id: string, @CurrentOrg("id") orgId: string) {
+    return this.projectsService.archive(id, orgId);
+  }
+
+  @Post(":id/unarchive")
+  @Roles("owner", "admin")
+  unarchive(@Param("id") id: string, @CurrentOrg("id") orgId: string) {
+    return this.projectsService.unarchive(id, orgId);
   }
 
   @Put(":id")

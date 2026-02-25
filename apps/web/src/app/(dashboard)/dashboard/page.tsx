@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { apiFetch } from "@/lib/api";
+import { StatCardSkeleton } from "@/components/skeletons";
+import { FolderKanban, TrendingUp, CheckCircle } from "lucide-react";
 
 interface Project {
   id: string;
@@ -11,38 +13,71 @@ interface Project {
   createdAt: string;
 }
 
+interface Stats {
+  total: number;
+  inProgress: number;
+  completed: number;
+}
+
+interface PaginatedResponse<T> {
+  data: T[];
+  meta: { total: number; page: number; limit: number; totalPages: number };
+}
+
 export default function DashboardPage() {
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [recent, setRecent] = useState<Project[]>([]);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    apiFetch<Project[]>("/projects").then(setProjects).catch(console.error);
+    apiFetch<Stats>("/projects/stats")
+      .then(setStats)
+      .catch((err) => setError(err.message || "Failed to load stats"));
+    apiFetch<PaginatedResponse<Project>>("/projects?limit=5")
+      .then((res) => setRecent(res.data))
+      .catch(console.error);
   }, []);
-
-  const recent = projects.slice(0, 5);
 
   return (
     <div className="space-y-8">
       <h1 className="text-2xl font-bold">Dashboard</h1>
 
+      {error && (
+        <div className="p-4 text-sm text-red-600 bg-red-50 rounded-lg">{error}</div>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-4 border border-[var(--border)] rounded-lg">
-          <p className="text-sm text-[var(--muted-foreground)]">
-            Total Projects
-          </p>
-          <p className="text-3xl font-bold mt-1">{projects.length}</p>
-        </div>
-        <div className="p-4 border border-[var(--border)] rounded-lg">
-          <p className="text-sm text-[var(--muted-foreground)]">In Progress</p>
-          <p className="text-3xl font-bold mt-1">
-            {projects.filter((p) => p.status === "in_progress").length}
-          </p>
-        </div>
-        <div className="p-4 border border-[var(--border)] rounded-lg">
-          <p className="text-sm text-[var(--muted-foreground)]">Completed</p>
-          <p className="text-3xl font-bold mt-1">
-            {projects.filter((p) => p.status === "completed").length}
-          </p>
-        </div>
+        {stats === null ? (
+          <>
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+          </>
+        ) : (
+          <>
+            <div className="p-4 border border-[var(--border)] rounded-lg">
+              <div className="flex items-center gap-2 text-sm text-[var(--muted-foreground)]">
+                <FolderKanban size={16} />
+                Total Projects
+              </div>
+              <p className="text-3xl font-bold mt-1">{stats.total}</p>
+            </div>
+            <div className="p-4 border border-[var(--border)] rounded-lg">
+              <div className="flex items-center gap-2 text-sm text-[var(--muted-foreground)]">
+                <TrendingUp size={16} />
+                In Progress
+              </div>
+              <p className="text-3xl font-bold mt-1">{stats.inProgress}</p>
+            </div>
+            <div className="p-4 border border-[var(--border)] rounded-lg">
+              <div className="flex items-center gap-2 text-sm text-[var(--muted-foreground)]">
+                <CheckCircle size={16} />
+                Completed
+              </div>
+              <p className="text-3xl font-bold mt-1">{stats.completed}</p>
+            </div>
+          </>
+        )}
       </div>
 
       <div>
@@ -72,7 +107,7 @@ export default function DashboardPage() {
               </Link>
             ))}
           </div>
-        ) : (
+        ) : stats !== null ? (
           <p className="text-[var(--muted-foreground)] text-sm">
             No projects yet.{" "}
             <Link
@@ -82,7 +117,7 @@ export default function DashboardPage() {
               Create your first project
             </Link>
           </p>
-        )}
+        ) : null}
       </div>
     </div>
   );

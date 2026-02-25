@@ -14,7 +14,7 @@ import {
 import { FileInterceptor } from "@nestjs/platform-express";
 import { Response } from "express";
 import { FilesService, UploadedFile as UploadedFileType } from "./files.service";
-import { AuthGuard, RolesGuard, Roles, CurrentUser, CurrentOrg } from "../common";
+import { AuthGuard, RolesGuard, Roles, CurrentUser, CurrentOrg, PaginationQueryDto } from "../common";
 
 @Controller("files")
 @UseGuards(AuthGuard, RolesGuard)
@@ -38,8 +38,14 @@ export class FilesController {
   findByProject(
     @Param("projectId") projectId: string,
     @CurrentOrg("id") orgId: string,
+    @Query() pagination: PaginationQueryDto,
   ) {
-    return this.filesService.findByProject(projectId, orgId);
+    return this.filesService.findByProject(
+      projectId,
+      orgId,
+      pagination.page,
+      pagination.limit,
+    );
   }
 
   @Get(":id/download")

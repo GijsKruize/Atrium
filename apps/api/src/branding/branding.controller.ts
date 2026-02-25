@@ -17,7 +17,7 @@ import { FileInterceptor } from "@nestjs/platform-express";
 import { Response } from "express";
 import { BrandingService } from "./branding.service";
 import { UpdateBrandingDto } from "./branding.dto";
-import { AuthGuard, RolesGuard, Roles, CurrentOrg } from "../common";
+import { AuthGuard, RolesGuard, Roles, CurrentOrg, Public } from "../common";
 import type { StorageProvider } from "../files/storage/storage.interface";
 import { STORAGE_PROVIDER } from "../files/storage/storage.interface";
 import { randomUUID } from "crypto";
@@ -104,6 +104,7 @@ export class BrandingController {
     });
   }
 
+  @Public()
   @Get("logo/:orgId")
   async serveLogo(
     @Param("orgId") orgId: string,
@@ -119,6 +120,7 @@ export class BrandingController {
     const { body, contentType } = await this.storage.download(branding.logoKey);
     res.setHeader("Content-Type", contentType);
     res.setHeader("Cache-Control", "public, max-age=3600");
+    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
     body.pipe(res);
   }
 }

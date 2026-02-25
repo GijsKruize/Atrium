@@ -1,17 +1,47 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateProjectDto, UpdateProjectDto } from "./projects.dto";
+import { paginationArgs, paginatedResponse } from "../common";
 
 @Injectable()
 export class ProjectsService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(organizationId: string) {
-    return this.prisma.project.findMany({
-      where: { organizationId },
-      include: { clients: { select: { userId: true } } },
-      orderBy: { createdAt: "desc" },
-    });
+  async findAll(
+    organizationId: string,
+    query: {
+      page?: number;
+      limit?: number;
+      search?: string;
+      status?: string;
+      archived?: string;
+    },
+  ) {
+    const { page = 1, limit = 20, search, status, archived } = query;
+    const where: any = { organizationId };
+
+    if (archived !== "true") {
+      where.archivedAt = null;
+    }
+
+    if (search) {
+      where.name = { contains: search, mode: "insensitive" };
+    }
+    if (status) {
+      where.status = status;
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.project.findMany({
+        where,
+        include: { clients: { select: { userId: true } } },
+        orderBy: { createdAt: "desc" },
+        ...paginationArgs(page, limit),
+      }),
+      this.prisma.project.count({ where }),
+    ]);
+
+    return paginatedResponse(data, total, page, limit);
   }
 
   async findOne(id: string, organizationId: string) {
@@ -32,6 +62,7 @@ export class ProjectsService {
       where: {
         id,
         organizationId,
+        archivedAt: null,
         clients: { some: { userId: clientUserId } },
       },
       include: { files: true },
@@ -40,14 +71,32 @@ export class ProjectsService {
     return project;
   }
 
-  async findByClient(clientUserId: string, organizationId: string) {
-    return this.prisma.project.findMany({
-      where: {
-        organizationId,
-        clients: { some: { userId: clientUserId } },
-      },
-      orderBy: { createdAt: "desc" },
-    });
+  async findByClient(
+    clientUserId: string,
+    organizationId: string,
+    query: { page?: number; limit?: number; search?: string },
+  ) {
+    const { page = 1, limit = 20, search } = query;
+    const where: any = {
+      organizationId,
+      archivedAt: null,
+      clients: { some: { userId: clientUserId } },
+    };
+
+    if (search) {
+      where.name = { contains: search, mode: "insensitive" };
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.project.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        ...paginationArgs(page, limit),
+      }),
+      this.prisma.project.count({ where }),
+    ]);
+
+    return paginatedResponse(data, total, page, limit);
   }
 
   async create(data: CreateProjectDto, organizationId: string) {
@@ -69,6 +118,14 @@ export class ProjectsService {
   }
 
   async update(id: string, data: UpdateProjectDto, organizationId: string) {
+    const existing = await this.prisma.project.findFirst({
+      where: { id, organizationId },
+    });
+    if (!existing) throw new NotFoundException("Project not found");
+    if (existing.archivedAt) {
+      throw new BadRequestException("Cannot update an archived project");
+    }
+
     const { clientUserIds, ...rest } = data;
 
     if (rest.status) {
@@ -121,5 +178,36 @@ export class ProjectsService {
       where: { organizationId },
       orderBy: { order: "asc" },
     });
+  }
+
+  async getStats(organizationId: string) {
+    const [total, inProgress, completed] = await Promise.all([
+      this.prisma.project.count({
+        where: { organizationId, archivedAt: null },
+      }),
+      this.prisma.project.count({
+        where: { organizationId, archivedAt: null, status: "in_progress" },
+      }),
+      this.prisma.project.count({
+        where: { organizationId, archivedAt: null, status: "completed" },
+      }),
+    ]);
+    return { total, inProgress, completed };
+  }
+
+  async archive(id: string, organizationId: string) {
+    const result = await this.prisma.project.updateMany({
+      where: { id, organizationId },
+      data: { archivedAt: new Date() },
+    });
+    if (result.count === 0) throw new NotFoundException("Project not found");
+  }
+
+  async unarchive(id: string, organizationId: string) {
+    const result = await this.prisma.project.updateMany({
+      where: { id, organizationId },
+      data: { archivedAt: null },
+    });
+    if (result.count === 0) throw new NotFoundException("Project not found");
   }
 }

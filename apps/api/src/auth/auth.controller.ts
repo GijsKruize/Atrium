@@ -33,6 +33,10 @@ export class AuthController {
     });
 
     const body = await response.text();
-    res.send(body);
+    if (body) {
+      res.send(body);
+    } else {
+      res.end();
+    }
   }
 }

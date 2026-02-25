@@ -16,7 +16,7 @@ import { FileInterceptor } from "@nestjs/platform-express";
 import { Response } from "express";
 import { UpdatesService } from "./updates.service";
 import { CreateUpdateDto } from "./updates.dto";
-import { AuthGuard, RolesGuard, Roles, CurrentUser, CurrentOrg } from "../common";
+import { AuthGuard, RolesGuard, Roles, CurrentUser, CurrentOrg, PaginationQueryDto } from "../common";
 import type { UploadedFile as UploadedFileType } from "../files/files.service";
 
 @Controller("updates")
@@ -45,8 +45,14 @@ export class UpdatesController {
   findByProject(
     @Param("projectId") projectId: string,
     @CurrentOrg("id") orgId: string,
+    @Query() pagination: PaginationQueryDto,
   ) {
-    return this.updatesService.findByProject(projectId, orgId);
+    return this.updatesService.findByProject(
+      projectId,
+      orgId,
+      pagination.page,
+      pagination.limit,
+    );
   }
 
   @Get("mine/:projectId")
@@ -54,11 +60,14 @@ export class UpdatesController {
     @Param("projectId") projectId: string,
     @CurrentUser("id") userId: string,
     @CurrentOrg("id") orgId: string,
+    @Query() pagination: PaginationQueryDto,
   ) {
     return this.updatesService.findByProjectForClient(
       projectId,
       userId,
       orgId,
+      pagination.page,
+      pagination.limit,
     );
   }
 

@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useRef } from "react";
 import { apiFetch } from "@/lib/api";
+import { useToast } from "@/components/toast";
+import { Upload } from "lucide-react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
@@ -18,8 +20,8 @@ export default function BrandingPage() {
     primaryColor: "#2563eb",
     accentColor: "#f59e0b",
   });
+  const { success, error: showError } = useToast();
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -38,10 +40,9 @@ export default function BrandingPage() {
           accentColor: branding.accentColor,
         }),
       });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
+      success("Branding saved");
     } catch (err) {
-      console.error(err);
+      showError(err instanceof Error ? err.message : "Failed to save branding");
     } finally {
       setSaving(false);
     }
@@ -96,12 +97,6 @@ export default function BrandingPage() {
     <div>
       <h1 className="text-2xl font-bold mb-6">Branding</h1>
       <form onSubmit={handleSave} className="max-w-md space-y-6">
-        {saved && (
-          <div className="p-3 text-sm text-green-600 bg-green-50 rounded-lg">
-            Branding saved!
-          </div>
-        )}
-
         {/* Logo Upload */}
         <div className="space-y-3">
           <label className="text-sm font-medium">Company Logo</label>
@@ -144,6 +139,7 @@ export default function BrandingPage() {
           ) : (
             <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-[var(--border)] rounded-lg cursor-pointer hover:bg-[var(--muted)] transition-colors">
               <div className="text-center">
+                <Upload size={20} className="text-[var(--muted-foreground)] mb-1" />
                 <p className="text-sm text-[var(--muted-foreground)]">
                   {uploading ? "Uploading..." : "Click to upload your logo"}
                 </p>
