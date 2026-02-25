@@ -2,7 +2,7 @@
 
 **A self-hosted client portal for agencies and freelancers.**
 
-Created by [@edgarjc](https://github.com/edgarjc) -- I'm starting a company and building products along the way. When I create something I think others would benefit from, I share it here.
+Created by [@ecotto123](https://github.com/ecotto123) -- I'm starting a company and building products along the way. When I create something I think others would benefit from, I share it here.
 
 [![License: ELv2](https://img.shields.io/badge/License-ELv2-blue.svg)](https://www.elastic.co/licensing/elastic-license)
 
@@ -46,7 +46,7 @@ Most agencies juggle shared drives, spreadsheets, and scattered emails to keep c
 **Prerequisites:** [Bun](https://bun.sh) (v1.0+) and [Docker](https://docs.docker.com/get-docker/) (for PostgreSQL).
 
 ```bash
-git clone https://github.com/edgarjc/atrium.git
+git clone https://github.com/Vibra-Labs/Atrium.git
 cd atrium
 bun install
 bun run setup
@@ -58,7 +58,7 @@ This starts the web app at [localhost:3000](http://localhost:3000) and the API a
 ### Docker (Production)
 
 ```bash
-git clone https://github.com/edgarjc/atrium.git
+git clone https://github.com/Vibra-Labs/Atrium.git
 cd atrium
 docker compose up --build
 ```
@@ -87,14 +87,14 @@ docker compose up --build -d
 
 Contributions are welcome! Here's how to get involved:
 
-1. **Open an issue first** -- Whether it's a bug report, feature idea, or improvement, start with a [GitHub Issue](https://github.com/edgarjc/atrium/issues) so we can discuss before you write code.
+1. **Open an issue first** -- Whether it's a bug report, feature idea, or improvement, start with a [GitHub Issue](https://github.com/Vibra-Labs/Atrium/issues) so we can discuss before you write code.
 2. **Keep PRs focused** -- Small, single-purpose pull requests are easier to review and merge.
 3. **Bug fixes and improvements welcome** -- New features should be discussed in an issue first to make sure they align with the project direction.
 
 ## Community & Support
 
-- **Bug reports & feature requests** -- [GitHub Issues](https://github.com/edgarjc/atrium/issues)
-- **Questions & discussions** -- [GitHub Discussions](https://github.com/edgarjc/atrium/discussions)
+- **Bug reports & feature requests** -- [GitHub Issues](https://github.com/Vibra-Labs/Atrium/issues)
+- **Questions & discussions** -- [GitHub Discussions](https://github.com/Vibra-Labs/Atrium/discussions)
 
 If you find Atrium useful, consider giving it a star -- it helps others discover the project.
 

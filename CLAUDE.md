@@ -107,3 +107,7 @@ See `.env.example` for all variables.
 - Roles: `owner`, `admin`, `member` -- enforced via `@Roles()` decorator + `RolesGuard`
 - Public endpoints use `@Public()` decorator to bypass auth
 - Rate limiting skipped on health check via `@SkipThrottle()`
+
+## Git
+
+- Never add `Co-Authored-By` lines to commit messages. All commits should show only the user as author.
