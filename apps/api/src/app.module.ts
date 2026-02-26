@@ -18,6 +18,7 @@ import { InvoicesModule } from "./invoices/invoices.module";
 import { HealthController } from "./health.controller";
 import { SessionMiddleware } from "./auth/session.middleware";
 import { AllExceptionsFilter } from "./common";
+import { CsrfGuard } from "./common/guards/csrf.guard";
 
 @Module({
   imports: [
@@ -66,6 +67,10 @@ import { AllExceptionsFilter } from "./common";
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: CsrfGuard,
     },
   ],
 })
