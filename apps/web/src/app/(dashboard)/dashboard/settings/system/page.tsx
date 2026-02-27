@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { useToast } from "@/components/toast";
-import { Mail, HardDrive, Send } from "lucide-react";
+import { Mail, HardDrive, Send, Palette } from "lucide-react";
+import { BrandingSection } from "./branding-section";
 
 interface SystemSettings {
   emailProvider: string | null;
@@ -16,6 +17,14 @@ interface SystemSettings {
   smtpSecure: boolean;
   maxFileSizeMb: number;
   setupCompleted: boolean;
+}
+
+interface Branding {
+  primaryColor: string;
+  accentColor: string;
+  logoUrl?: string;
+  logoKey?: string;
+  organizationId?: string;
 }
 
 const defaultSettings: SystemSettings = {
@@ -33,6 +42,10 @@ const defaultSettings: SystemSettings = {
 
 export default function SystemSettingsPage() {
   const [settings, setSettings] = useState<SystemSettings>(defaultSettings);
+  const [branding, setBranding] = useState<Branding>({
+    primaryColor: "#006b68",
+    accentColor: "#ff6b5c",
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testingEmail, setTestingEmail] = useState(false);
@@ -48,11 +61,15 @@ export default function SystemSettingsPage() {
   const [hasSmtpPass, setHasSmtpPass] = useState(false);
 
   useEffect(() => {
-    apiFetch<SystemSettings>("/settings")
-      .then((data) => {
-        setHasResendApiKey(!!data.resendApiKey);
-        setHasSmtpPass(!!data.smtpPass);
-        setSettings(data);
+    Promise.all([
+      apiFetch<SystemSettings>("/settings"),
+      apiFetch<Branding>("/branding"),
+    ])
+      .then(([settingsData, brandingData]) => {
+        setHasResendApiKey(!!settingsData.resendApiKey);
+        setHasSmtpPass(!!settingsData.smtpPass);
+        setSettings(settingsData);
+        setBranding(brandingData);
         setLoading(false);
       })
       .catch((err) => {
@@ -84,13 +101,23 @@ export default function SystemSettingsPage() {
         payload.smtpPass = settings.smtpPass || null;
       }
 
-      const updated = await apiFetch<SystemSettings>("/settings", {
-        method: "PUT",
-        body: JSON.stringify(payload),
-      });
-      setSettings(updated);
-      setHasResendApiKey(!!updated.resendApiKey);
-      setHasSmtpPass(!!updated.smtpPass);
+      const [updatedSettings] = await Promise.all([
+        apiFetch<SystemSettings>("/settings", {
+          method: "PUT",
+          body: JSON.stringify(payload),
+        }),
+        apiFetch("/branding", {
+          method: "PUT",
+          body: JSON.stringify({
+            primaryColor: branding.primaryColor,
+            accentColor: branding.accentColor,
+          }),
+        }),
+      ]);
+
+      setSettings(updatedSettings);
+      setHasResendApiKey(!!updatedSettings.resendApiKey);
+      setHasSmtpPass(!!updatedSettings.smtpPass);
       setEditedApiKey(false);
       setEditedSmtpPass(false);
       success("Settings saved");
@@ -127,6 +154,18 @@ export default function SystemSettingsPage() {
       <h1 className="text-2xl font-bold">System Settings</h1>
 
       <form onSubmit={handleSave} className="max-w-lg space-y-8">
+        {/* Branding */}
+        <section className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Palette size={20} />
+            <h2 className="text-lg font-semibold">Branding</h2>
+          </div>
+          <p className="text-sm text-[var(--muted-foreground)]">
+            Customize your client portal appearance with your logo and brand colors.
+          </p>
+          <BrandingSection branding={branding} onBrandingChange={setBranding} />
+        </section>
+
         {/* Email Configuration */}
         <section className="space-y-4">
           <div className="flex items-center gap-2">

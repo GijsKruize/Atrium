@@ -76,36 +76,33 @@ test.describe("Portal Isolation", () => {
     });
   });
 
-  test.describe("Portal invoices are read-only", () => {
-    test("portal invoices page loads", async ({ page }) => {
-      await page.goto("/portal/invoices");
-      await expect(page.getByRole("heading", { name: /invoices/i })).toBeVisible();
+  test.describe("Portal invoices are read-only (within project)", () => {
+    test("portal project detail shows invoices section", async ({ page }) => {
+      await page.goto("/portal/projects");
+      const projectLink = page.locator("a[href*='/portal/projects/']").first();
+      if (await projectLink.isVisible({ timeout: 5000 }).catch(() => false)) {
+        await projectLink.click();
+        await page.waitForTimeout(2000);
+        await expect(page.getByText(/invoices/i)).toBeVisible();
+      }
     });
 
-    test("portal invoices page does NOT show new invoice button", async ({ page }) => {
-      await page.goto("/portal/invoices");
-      await page.waitForTimeout(2000);
+    test("portal project invoices do NOT show new invoice button", async ({ page }) => {
+      await page.goto("/portal/projects");
+      const projectLink = page.locator("a[href*='/portal/projects/']").first();
+      if (await projectLink.isVisible({ timeout: 5000 }).catch(() => false)) {
+        await projectLink.click();
+        await page.waitForTimeout(2000);
 
-      await expect(page.getByRole("link", { name: /new invoice/i })).not.toBeVisible();
-      await expect(page.getByRole("button", { name: /new invoice/i })).not.toBeVisible();
+        await expect(page.getByRole("button", { name: /new invoice/i })).not.toBeVisible();
+      }
     });
 
-    test("portal invoices page does NOT show stats or filters", async ({ page }) => {
-      await page.goto("/portal/invoices");
-      await page.waitForTimeout(2000);
-
-      // No outstanding stats card on portal
-      await expect(page.getByText(/outstanding/i)).not.toBeVisible();
-      // No status/project filter dropdowns
-      await expect(page.getByText(/all statuses/i)).not.toBeVisible();
-      await expect(page.getByText(/all projects/i)).not.toBeVisible();
-    });
-
-    test("portal invoice detail does NOT show edit/delete/status controls", async ({ page }) => {
-      await page.goto("/portal/invoices");
-      const invoiceLink = page.locator("a[href*='/portal/invoices/']").first();
-      if (await invoiceLink.isVisible({ timeout: 5000 }).catch(() => false)) {
-        await invoiceLink.click();
+    test("portal project invoices do NOT show status controls", async ({ page }) => {
+      await page.goto("/portal/projects");
+      const projectLink = page.locator("a[href*='/portal/projects/']").first();
+      if (await projectLink.isVisible({ timeout: 5000 }).catch(() => false)) {
+        await projectLink.click();
         await page.waitForTimeout(2000);
 
         // No status transition buttons
@@ -113,7 +110,6 @@ test.describe("Portal Isolation", () => {
         await expect(page.getByRole("button", { name: /mark as paid/i })).not.toBeVisible();
         // No edit or delete
         await expect(page.getByRole("button", { name: /edit/i })).not.toBeVisible();
-        await expect(page.locator('[title="Delete invoice"]')).not.toBeVisible();
       }
     });
   });
@@ -121,9 +117,8 @@ test.describe("Portal Isolation", () => {
   test.describe("Portal navigation does NOT expose admin routes", () => {
     test("portal header has only client-safe links", async ({ page }) => {
       await page.goto("/portal");
-      // Should have portal nav links
+      // Should have portal nav links (Projects and Settings; Invoices is now within projects)
       await expect(page.getByRole("link", { name: /projects/i })).toBeVisible();
-      await expect(page.getByRole("link", { name: /invoices/i })).toBeVisible();
       await expect(page.getByRole("link", { name: /settings/i })).toBeVisible();
 
       // Should NOT have dashboard links

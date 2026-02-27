@@ -22,8 +22,8 @@ interface StepOrgProfileProps {
 export function StepOrgProfile({ orgName, onNext }: StepOrgProfileProps) {
   const [name, setName] = useState(orgName);
   const [branding, setBranding] = useState<Branding>({
-    primaryColor: "#2563eb",
-    accentColor: "#f59e0b",
+    primaryColor: "#006b68",
+    accentColor: "#ff6b5c",
   });
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);

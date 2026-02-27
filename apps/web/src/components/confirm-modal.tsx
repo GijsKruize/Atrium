@@ -13,6 +13,7 @@ interface ConfirmOptions {
   title: string;
   message: string;
   confirmLabel?: string;
+  confirmText?: string;
   variant?: "danger" | "default";
 }
 
@@ -30,10 +31,12 @@ export function useConfirm() {
 
 export function ConfirmProvider({ children }: { children: React.ReactNode }) {
   const [options, setOptions] = useState<ConfirmOptions | null>(null);
+  const [inputValue, setInputValue] = useState("");
   const resolveRef = useRef<((value: boolean) => void) | null>(null);
 
   const confirm = useCallback((opts: ConfirmOptions): Promise<boolean> => {
     setOptions(opts);
+    setInputValue("");
     return new Promise<boolean>((resolve) => {
       resolveRef.current = resolve;
     });
@@ -43,6 +46,7 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
     resolveRef.current?.(result);
     resolveRef.current = null;
     setOptions(null);
+    setInputValue("");
   }, []);
 
   useEffect(() => {
@@ -53,6 +57,9 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [options, handleClose]);
+
+  const needsTextConfirm = !!options?.confirmText;
+  const textMatches = !needsTextConfirm || inputValue === options?.confirmText;
 
   return (
     <ConfirmContext.Provider value={{ confirm }}>
@@ -69,6 +76,20 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
             <p className="text-sm text-[var(--muted-foreground)]">
               {options.message}
             </p>
+            {needsTextConfirm && (
+              <div>
+                <label className="block text-sm text-[var(--muted-foreground)] mb-1.5">
+                  Type <span className="font-semibold text-[var(--foreground)]">{options.confirmText}</span> to confirm
+                </label>
+                <input
+                  type="text"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  autoFocus
+                  className="w-full px-3 py-2 border border-[var(--border)] rounded-lg bg-[var(--background)] text-sm outline-none focus:ring-1 focus:ring-[var(--primary)]"
+                />
+              </div>
+            )}
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => handleClose(false)}
@@ -78,10 +99,11 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
               </button>
               <button
                 onClick={() => handleClose(true)}
+                disabled={!textMatches}
                 className={
                   options.variant === "danger"
-                    ? "px-4 py-1.5 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 transition-colors"
-                    : "px-4 py-1.5 bg-[var(--primary)] text-white rounded-lg text-sm hover:opacity-90 transition-colors"
+                    ? "px-4 py-1.5 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    : "px-4 py-1.5 bg-[var(--primary)] text-white rounded-lg text-sm hover:opacity-90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 }
               >
                 {options.confirmLabel || "Confirm"}

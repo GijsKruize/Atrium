@@ -25,7 +25,10 @@ export class AuthService {
       secret: this.config.getOrThrow("BETTER_AUTH_SECRET"),
       baseURL: this.config.get("BETTER_AUTH_URL", "http://localhost:3001"),
       basePath: "/api/auth",
-      trustedOrigins: [webUrl],
+      trustedOrigins: [
+        webUrl,
+        this.config.get("BETTER_AUTH_URL", "http://localhost:3001"),
+      ],
       emailAndPassword: {
         enabled: true,
         minPasswordLength: 8,

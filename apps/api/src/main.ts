@@ -62,8 +62,8 @@ import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
 import { ValidationPipe } from "@nestjs/common";
 import { Logger } from "nestjs-pino";
+import * as cookieParser from "cookie-parser";
 import helmet from "helmet";
-import cookieParser from "cookie-parser";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });

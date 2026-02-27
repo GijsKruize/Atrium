@@ -6,8 +6,6 @@ import {
   LayoutDashboard,
   FolderKanban,
   Users,
-  Receipt,
-  Palette,
   UserCog,
   Settings,
 } from "lucide-react";
@@ -15,9 +13,7 @@ import {
 const navItems = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
   { href: "/dashboard/projects", label: "Projects", icon: FolderKanban },
-  { href: "/dashboard/invoices", label: "Invoices", icon: Receipt },
   { href: "/dashboard/clients", label: "Clients", icon: Users },
-  { href: "/dashboard/settings/branding", label: "Branding", icon: Palette },
   { href: "/dashboard/settings/system", label: "System", icon: Settings },
   { href: "/dashboard/settings/account", label: "Account", icon: UserCog },
 ];

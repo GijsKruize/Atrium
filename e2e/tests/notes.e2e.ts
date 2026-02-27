@@ -4,24 +4,24 @@ const API = "http://localhost:3001/api";
 
 test.describe("Internal Notes", () => {
   test.describe("Dashboard project detail", () => {
-    test("project detail page shows internal notes section", async ({ page }) => {
+    test("project detail page shows notes tab and content", async ({ page }) => {
       await page.goto("/dashboard/projects");
       const projectLink = page.locator("a[href*='/dashboard/projects/']").first();
       if (await projectLink.isVisible({ timeout: 5000 }).catch(() => false)) {
         await projectLink.click();
-        await expect(page.getByText(/internal notes/i)).toBeVisible({ timeout: 5000 });
-        await expect(page.getByText(/team only/i)).toBeVisible();
+        // Click the Notes tab
+        await page.getByRole("button", { name: /^notes$/i }).click();
+        await expect(page.getByText(/team only/i)).toBeVisible({ timeout: 5000 });
       }
     });
 
-    test("internal notes section has add note button", async ({ page }) => {
+    test("notes tab has add note button", async ({ page }) => {
       await page.goto("/dashboard/projects");
       const projectLink = page.locator("a[href*='/dashboard/projects/']").first();
       if (await projectLink.isVisible({ timeout: 5000 }).catch(() => false)) {
         await projectLink.click();
-        // Expand the notes section if collapsed
-        const notesHeader = page.getByText(/internal notes/i);
-        await notesHeader.click();
+        // Click the Notes tab
+        await page.getByRole("button", { name: /^notes$/i }).click();
         await expect(page.getByRole("button", { name: /add note/i })).toBeVisible({ timeout: 3000 });
       }
     });

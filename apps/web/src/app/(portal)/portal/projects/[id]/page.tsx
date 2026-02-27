@@ -7,6 +7,7 @@ import { formatBytes, formatRelativeTime } from "@/lib/utils";
 import { ProjectDetailSkeleton } from "@/components/skeletons";
 import { Pagination } from "@/components/pagination";
 import { Download, FileX, MessageSquare, CheckSquare, Square, ListTodo } from "lucide-react";
+import { PortalInvoicesSection } from "./components/portal-invoices-section";
 
 interface FileRecord {
   id: string;
@@ -284,6 +285,9 @@ export default function PortalProjectDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Invoices */}
+      <PortalInvoicesSection projectId={id} />
     </div>
   );
 }

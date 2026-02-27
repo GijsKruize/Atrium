@@ -15,7 +15,7 @@ export class InvoicesService {
     private notifications: NotificationsService,
   ) {}
 
-  async create(dto: CreateInvoiceDto, orgId: string, retries = 0) {
+  async create(dto: CreateInvoiceDto, orgId: string, retries = 0): Promise<any> {
     try {
       return await this.prisma.$transaction(async (tx) => {
         const lastInvoice = await tx.invoice.findFirst({

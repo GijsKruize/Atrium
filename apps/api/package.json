@@ -9,7 +9,7 @@
     "start:prod": "node dist/main",
     "test": "bun test",
     "lint": "eslint src/",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist tsconfig.tsbuildinfo"
   },
   "dependencies": {
     "@atrium/database": "workspace:*",
