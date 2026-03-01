@@ -2,15 +2,20 @@ import {
   Injectable,
   Inject,
   NotFoundException,
+  ForbiddenException,
   BadRequestException,
+  PayloadTooLargeException,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { PrismaService } from "../prisma/prisma.service";
+import { SettingsService } from "../settings/settings.service";
 import type { StorageProvider } from "./storage/storage.interface";
 import { STORAGE_PROVIDER } from "./storage/storage.interface";
 import { randomUUID } from "crypto";
 import { extname } from "path";
-import { paginationArgs, paginatedResponse } from "../common";
+import { paginationArgs, paginatedResponse, sanitizeFilename } from "../common";
+
+const PRIVILEGED_ROLES = new Set(["owner", "admin"]);
 
 export interface UploadedFile {
   originalname: string;
@@ -24,24 +29,18 @@ const BLOCKED_EXTENSIONS = new Set([
   ".scr", ".pif", ".vbs", ".vbe", ".js", ".jse", ".wsf", ".wsh",
 ]);
 
-function sanitizeFilename(filename: string): string {
-  // Strip path traversal and directory separators
-  const base = filename.replace(/^.*[/\\]/, "");
-  // Remove non-ASCII and control characters, keep alphanumeric, dot, dash, underscore, space
-  return base.replace(/[^\w.\- ]/g, "_").replace(/\.{2,}/g, ".") || "file";
-}
-
 @Injectable()
 export class FilesService {
-  private maxFileSize: number;
+  private defaultMaxFileSize: number;
 
   constructor(
     private prisma: PrismaService,
     private config: ConfigService,
+    private settingsService: SettingsService,
     @Inject(STORAGE_PROVIDER) private storage: StorageProvider,
   ) {
     const maxMb = parseInt(this.config.get("MAX_FILE_SIZE_MB", "50"), 10);
-    this.maxFileSize = maxMb * 1024 * 1024;
+    this.defaultMaxFileSize = maxMb * 1024 * 1024;
   }
 
   async upload(
@@ -50,9 +49,13 @@ export class FilesService {
     organizationId: string,
     uploadedById: string,
   ) {
-    if (file.size > this.maxFileSize) {
-      throw new BadRequestException(
-        `File size exceeds maximum of ${this.maxFileSize / 1024 / 1024}MB`,
+    // Early size check: validate against org-specific limit before any processing
+    const maxFileSizeMb = await this.settingsService.getEffectiveMaxFileSize(organizationId);
+    const maxFileSize = maxFileSizeMb * 1024 * 1024;
+
+    if (file.size > maxFileSize) {
+      throw new PayloadTooLargeException(
+        `File size (${Math.round(file.size / 1024 / 1024)}MB) exceeds the maximum allowed size of ${maxFileSizeMb}MB`,
       );
     }
 
@@ -105,23 +108,46 @@ export class FilesService {
     return paginatedResponse(data, total, page, limit);
   }
 
-  async download(id: string, organizationId: string) {
+  async download(id: string, organizationId: string, userId: string, role: string) {
     const file = await this.prisma.file.findFirst({
       where: { id, organizationId },
     });
     if (!file) throw new NotFoundException("File not found");
+
+    await this.assertProjectAccess(file.projectId, userId, role);
 
     const { body, contentType } = await this.storage.download(file.storageKey);
     return { body, contentType, filename: file.filename };
   }
 
-  async getDownloadUrl(id: string, organizationId: string) {
+  async getDownloadUrl(id: string, organizationId: string, userId: string, role: string) {
     const file = await this.prisma.file.findFirst({
       where: { id, organizationId },
     });
     if (!file) throw new NotFoundException("File not found");
 
+    await this.assertProjectAccess(file.projectId, userId, role);
+
     return { url: `/api/files/${id}/download` };
+  }
+
+  /**
+   * Verifies that a user has access to a project's files.
+   * Owners and admins can access all files in the org.
+   * Members (clients) must be explicitly assigned to the project.
+   */
+  private async assertProjectAccess(projectId: string, userId: string, role: string) {
+    if (PRIVILEGED_ROLES.has(role)) {
+      return;
+    }
+
+    const assignment = await this.prisma.projectClient.findFirst({
+      where: { projectId, userId },
+    });
+
+    if (!assignment) {
+      throw new ForbiddenException("You do not have access to this file");
+    }
   }
 
   async remove(id: string, organizationId: string) {

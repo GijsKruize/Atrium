@@ -102,7 +102,7 @@ export class ProjectsController {
   }
 
   @Delete(":id")
-  @Roles("owner", "admin")
+  @Roles("owner")
   remove(@Param("id") id: string, @CurrentOrg("id") orgId: string) {
     return this.projectsService.remove(id, orgId);
   }

@@ -31,16 +31,18 @@ export function InvitationEmail({
             You&apos;re invited to {organizationName}
           </Heading>
           <Text style={{ fontSize: "16px", lineHeight: "24px" }}>
-            {inviterName ? `${inviterName} has` : "You have been"} invited you
-            to join {organizationName}&apos;s client portal. Click below to
-            accept the invitation and access your projects.
+            {inviterName
+              ? `${inviterName} has invited you to join`
+              : "You have been invited to join"}{" "}
+            {organizationName}&apos;s client portal. Click below to accept the
+            invitation and access your projects.
           </Text>
           <Link
             href={inviteUrl}
             style={{
               display: "inline-block",
               padding: "12px 24px",
-              backgroundColor: "#2563eb",
+              backgroundColor: "#006b68",
               color: "#ffffff",
               borderRadius: "6px",
               textDecoration: "none",

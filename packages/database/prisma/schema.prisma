@@ -74,16 +74,18 @@ model Verification {
 }
 
 model Organization {
-  id        String   @id
-  name      String
-  slug      String?  @unique
-  logo      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  metadata  String?
+  id             String   @id
+  name           String
+  slug           String?  @unique
+  logo           String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  metadata       String?
+  setupCompleted Boolean  @default(false)
 
-  members     Member[]
-  invitations Invitation[]
+  members        Member[]
+  invitations    Invitation[]
+  systemSettings SystemSettings?
 
   @@map("organization")
 }
@@ -98,6 +100,8 @@ model Member {
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([organizationId])
+  @@index([userId])
   @@map("member")
 }
 
@@ -128,9 +132,12 @@ model Project {
   updatedAt      DateTime @updatedAt
   archivedAt     DateTime?
 
-  files   File[]
-  clients ProjectClient[]
-  updates ProjectUpdate[]
+  files    File[]
+  clients  ProjectClient[]
+  updates  ProjectUpdate[]
+  tasks    Task[]
+  invoices Invoice[]
+  notes    ProjectNote[]
 
   @@index([organizationId])
   @@map("project")
@@ -185,6 +192,88 @@ model ProjectUpdate {
   @@map("project_update")
 }
 
+model Task {
+  id             String    @id @default(cuid())
+  title          String
+  description    String?
+  dueDate        DateTime?
+  completed      Boolean   @default(false)
+  order          Int       @default(0)
+  projectId      String
+  organizationId String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([organizationId])
+  @@map("task")
+}
+
+model Invoice {
+  id             String            @id @default(cuid())
+  invoiceNumber  String
+  status         String            @default("draft")
+  dueDate        DateTime?
+  notes          String?
+  projectId      String?
+  organizationId String
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  project   Project?          @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  lineItems InvoiceLineItem[]
+
+  @@unique([organizationId, invoiceNumber])
+  @@index([organizationId])
+  @@index([projectId])
+  @@map("invoice")
+}
+
+model InvoiceLineItem {
+  id          String @id @default(cuid())
+  description String
+  quantity    Int    @default(1)
+  unitPrice   Int   // cents (1500 = $15.00)
+  invoiceId   String
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@map("invoice_line_item")
+}
+
+model ProjectNote {
+  id             String   @id @default(cuid())
+  content        String
+  projectId      String
+  organizationId String
+  authorId       String
+  createdAt      DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([organizationId])
+  @@map("project_note")
+}
+
+model ClientProfile {
+  id             String  @id @default(cuid())
+  userId         String
+  organizationId String
+  company        String?
+  phone          String?
+  address        String?
+  website        String?
+  description    String?
+
+  @@unique([userId, organizationId])
+  @@index([organizationId])
+  @@map("client_profile")
+}
+
 model Branding {
   id             String   @id @default(cuid())
   organizationId String   @unique
@@ -196,6 +285,33 @@ model Branding {
   updatedAt      DateTime @updatedAt
 
   @@map("branding")
+}
+
+model SystemSettings {
+  id             String   @id @default(cuid())
+  organizationId String   @unique
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  // Email settings
+  emailProvider  String?  // "resend" | "smtp" | null (disabled)
+  emailFrom      String?  // sender address
+  resendApiKey   String?  // encrypted
+  smtpHost       String?
+  smtpPort       Int?
+  smtpUser       String?
+  smtpPass       String?  // encrypted
+  smtpSecure     Boolean  @default(true)
+
+  // File settings
+  maxFileSizeMb  Int      @default(50)
+
+  // General
+  setupCompleted Boolean  @default(false)
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("system_settings")
 }
 
 model ProjectStatus {

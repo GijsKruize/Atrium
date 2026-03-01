@@ -12,9 +12,15 @@ import { MailModule } from "./mail/mail.module";
 import { ClientsModule } from "./clients/clients.module";
 import { OnboardingModule } from "./onboarding/onboarding.module";
 import { UpdatesModule } from "./updates/updates.module";
+import { NotesModule } from "./notes/notes.module";
+import { TasksModule } from "./tasks/tasks.module";
+import { InvoicesModule } from "./invoices/invoices.module";
+import { SettingsModule } from "./settings/settings.module";
+import { SetupModule } from "./setup/setup.module";
 import { HealthController } from "./health.controller";
 import { SessionMiddleware } from "./auth/session.middleware";
 import { AllExceptionsFilter } from "./common";
+import { CsrfGuard } from "./common/guards/csrf.guard";
 
 @Module({
   imports: [
@@ -50,6 +56,11 @@ import { AllExceptionsFilter } from "./common";
     ClientsModule,
     OnboardingModule,
     UpdatesModule,
+    NotesModule,
+    TasksModule,
+    InvoicesModule,
+    SettingsModule,
+    SetupModule,
   ],
   controllers: [HealthController],
   providers: [
@@ -60,6 +71,10 @@ import { AllExceptionsFilter } from "./common";
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: CsrfGuard,
     },
   ],
 })

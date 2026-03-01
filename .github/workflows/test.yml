@@ -1,0 +1,49 @@
+name: Tests
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: self-hosted
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: atrium
+          POSTGRES_PASSWORD: atrium
+          POSTGRES_DB: atrium
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U atrium"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://atrium:atrium@localhost:5432/atrium?schema=public
+      BETTER_AUTH_SECRET: ci-test-secret-that-is-at-least-32-chars
+      BETTER_AUTH_URL: http://localhost:3001
+      API_URL: http://localhost:3001
+      WEB_URL: http://localhost:3000
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+      STORAGE_PROVIDER: local
+      UPLOAD_DIR: ./uploads
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - run: bun install --frozen-lockfile
+
+      - run: bun run build
+
+      - run: bun run test

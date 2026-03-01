@@ -33,8 +33,8 @@ describe("BrandingService", () => {
     const branding = {
       id: "b1",
       organizationId: "org-1",
-      primaryColor: "#2563eb",
-      accentColor: "#f59e0b",
+      primaryColor: "#006b68",
+      accentColor: "#ff6b5c",
     };
     mockPrisma.branding.findUnique.mockReturnValue(
       Promise.resolve(branding),

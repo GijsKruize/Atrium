@@ -6,7 +6,7 @@ import { useConfirm } from "@/components/confirm-modal";
 import { useToast } from "@/components/toast";
 import { Pagination } from "@/components/pagination";
 import { ClientItemSkeleton } from "@/components/skeletons";
-import { UserPlus, Copy, Check, Trash2 } from "lucide-react";
+import { UserPlus, Copy, Check, Trash2, ChevronDown, ChevronRight } from "lucide-react";
 
 interface Invitation {
   id: string;
@@ -21,6 +21,14 @@ interface ClientMember {
   userId: string;
   role: string;
   user: { id: string; name: string; email: string };
+}
+
+interface ClientProfile {
+  company?: string;
+  phone?: string;
+  address?: string;
+  website?: string;
+  description?: string;
 }
 
 interface PaginatedResponse<T> {
@@ -40,6 +48,10 @@ export default function ClientsPage() {
   const [copied, setCopied] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [expandedMember, setExpandedMember] = useState<string | null>(null);
+  const [profiles, setProfiles] = useState<Record<string, ClientProfile>>({});
+  const [editingProfile, setEditingProfile] = useState<Record<string, ClientProfile>>({});
+  const [savingProfile, setSavingProfile] = useState<string | null>(null);
 
   // Get current user to know their role
   const [currentUserId, setCurrentUserId] = useState("");
@@ -143,6 +155,40 @@ export default function ClientsPage() {
     }
   };
 
+  const handleExpandMember = async (memberId: string, userId: string) => {
+    if (expandedMember === memberId) {
+      setExpandedMember(null);
+      return;
+    }
+    setExpandedMember(memberId);
+    if (!profiles[userId]) {
+      try {
+        const p = await apiFetch<ClientProfile>(`/clients/${userId}/profile`);
+        setProfiles((prev) => ({ ...prev, [userId]: p }));
+        setEditingProfile((prev) => ({ ...prev, [userId]: { ...p } }));
+      } catch {
+        setProfiles((prev) => ({ ...prev, [userId]: {} }));
+        setEditingProfile((prev) => ({ ...prev, [userId]: {} }));
+      }
+    }
+  };
+
+  const handleSaveProfile = async (userId: string) => {
+    setSavingProfile(userId);
+    try {
+      await apiFetch(`/clients/${userId}/profile`, {
+        method: "PUT",
+        body: JSON.stringify(editingProfile[userId] || {}),
+      });
+      setProfiles((prev) => ({ ...prev, [userId]: { ...editingProfile[userId] } }));
+      success("Profile updated");
+    } catch (err) {
+      showError(err instanceof Error ? err.message : "Failed to update profile");
+    } finally {
+      setSavingProfile(null);
+    }
+  };
+
   const roleColor = (role: string) => {
     switch (role) {
       case "owner":
@@ -225,49 +271,147 @@ export default function ClientsPage() {
                 const isSelf = member.userId === currentUserId;
                 const canChangeRole = currentRole === "owner" && !isSelf;
                 const canRemove = (currentRole === "owner" || currentRole === "admin") && !isSelf;
+                const isExpanded = expandedMember === member.id;
+                const memberProfile = editingProfile[member.userId];
+                const savedProfile = profiles[member.userId];
 
                 return (
                   <div
                     key={member.id}
-                    className="flex items-center justify-between p-3 border border-[var(--border)] rounded-lg"
+                    className="border border-[var(--border)] rounded-lg"
                   >
-                    <div>
+                    <div
+                      className="flex items-center justify-between p-3 cursor-pointer hover:bg-[var(--muted)] transition-colors"
+                      onClick={() => handleExpandMember(member.id, member.userId)}
+                    >
                       <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium">{member.user.name}</p>
-                        {isSelf && (
-                          <span className="text-xs text-[var(--muted-foreground)]">(you)</span>
+                        {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium">{member.user.name}</p>
+                            {isSelf && (
+                              <span className="text-xs text-[var(--muted-foreground)]">(you)</span>
+                            )}
+                          </div>
+                          <p className="text-xs text-[var(--muted-foreground)]">
+                            {member.user.email}
+                            {savedProfile?.company && (
+                              <span> &middot; {savedProfile.company}</span>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                        {canChangeRole ? (
+                          <select
+                            value={member.role}
+                            onChange={(e) => handleRoleChange(member.id, e.target.value)}
+                            className={`text-xs px-2 py-1 rounded-full border-0 cursor-pointer ${roleColor(member.role)}`}
+                          >
+                            <option value="owner">owner</option>
+                            <option value="admin">admin</option>
+                            <option value="member">member</option>
+                          </select>
+                        ) : (
+                          <span className={`text-xs px-2 py-1 rounded-full ${roleColor(member.role)}`}>
+                            {member.role}
+                          </span>
+                        )}
+                        {canRemove && (
+                          <button
+                            onClick={() => handleRemoveMember(member.id, member.user.name)}
+                            className="p-1.5 text-[var(--muted-foreground)] hover:text-red-500 transition-colors"
+                            title="Remove member"
+                          >
+                            <Trash2 size={14} />
+                          </button>
                         )}
                       </div>
-                      <p className="text-xs text-[var(--muted-foreground)]">
-                        {member.user.email}
-                      </p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {canChangeRole ? (
-                        <select
-                          value={member.role}
-                          onChange={(e) => handleRoleChange(member.id, e.target.value)}
-                          className={`text-xs px-2 py-1 rounded-full border-0 cursor-pointer ${roleColor(member.role)}`}
-                        >
-                          <option value="owner">owner</option>
-                          <option value="admin">admin</option>
-                          <option value="member">member</option>
-                        </select>
-                      ) : (
-                        <span className={`text-xs px-2 py-1 rounded-full ${roleColor(member.role)}`}>
-                          {member.role}
-                        </span>
-                      )}
-                      {canRemove && (
+
+                    {isExpanded && memberProfile && (
+                      <div className="px-3 pb-3 pt-1 border-t border-[var(--border)] space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-xs text-[var(--muted-foreground)]">Company</label>
+                            <input
+                              type="text"
+                              value={memberProfile.company || ""}
+                              onChange={(e) =>
+                                setEditingProfile((prev) => ({
+                                  ...prev,
+                                  [member.userId]: { ...prev[member.userId], company: e.target.value },
+                                }))
+                              }
+                              className="w-full mt-0.5 px-2 py-1.5 border border-[var(--border)] rounded-lg bg-[var(--background)] text-sm"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs text-[var(--muted-foreground)]">Phone</label>
+                            <input
+                              type="text"
+                              value={memberProfile.phone || ""}
+                              onChange={(e) =>
+                                setEditingProfile((prev) => ({
+                                  ...prev,
+                                  [member.userId]: { ...prev[member.userId], phone: e.target.value },
+                                }))
+                              }
+                              className="w-full mt-0.5 px-2 py-1.5 border border-[var(--border)] rounded-lg bg-[var(--background)] text-sm"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs text-[var(--muted-foreground)]">Address</label>
+                            <input
+                              type="text"
+                              value={memberProfile.address || ""}
+                              onChange={(e) =>
+                                setEditingProfile((prev) => ({
+                                  ...prev,
+                                  [member.userId]: { ...prev[member.userId], address: e.target.value },
+                                }))
+                              }
+                              className="w-full mt-0.5 px-2 py-1.5 border border-[var(--border)] rounded-lg bg-[var(--background)] text-sm"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs text-[var(--muted-foreground)]">Website</label>
+                            <input
+                              type="text"
+                              value={memberProfile.website || ""}
+                              onChange={(e) =>
+                                setEditingProfile((prev) => ({
+                                  ...prev,
+                                  [member.userId]: { ...prev[member.userId], website: e.target.value },
+                                }))
+                              }
+                              className="w-full mt-0.5 px-2 py-1.5 border border-[var(--border)] rounded-lg bg-[var(--background)] text-sm"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-xs text-[var(--muted-foreground)]">Description</label>
+                          <textarea
+                            value={memberProfile.description || ""}
+                            onChange={(e) =>
+                              setEditingProfile((prev) => ({
+                                ...prev,
+                                [member.userId]: { ...prev[member.userId], description: e.target.value },
+                              }))
+                            }
+                            rows={2}
+                            className="w-full mt-0.5 px-2 py-1.5 border border-[var(--border)] rounded-lg bg-[var(--background)] text-sm resize-none"
+                          />
+                        </div>
                         <button
-                          onClick={() => handleRemoveMember(member.id, member.user.name)}
-                          className="p-1.5 text-[var(--muted-foreground)] hover:text-red-500 transition-colors"
-                          title="Remove member"
+                          onClick={() => handleSaveProfile(member.userId)}
+                          disabled={savingProfile === member.userId}
+                          className="px-3 py-1.5 bg-[var(--primary)] text-white rounded-lg text-sm hover:opacity-90 disabled:opacity-50"
                         >
-                          <Trash2 size={14} />
+                          {savingProfile === member.userId ? "Saving..." : "Save Profile"}
                         </button>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}

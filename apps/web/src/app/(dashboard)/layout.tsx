@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { SignOutButton } from "./sign-out-button";
 import { SidebarNav } from "./sidebar-nav";
+import { EmailVerificationBanner } from "./email-verification-banner";
 
 async function getSessionWithRole() {
   try {
@@ -33,6 +34,23 @@ async function getSessionWithRole() {
   }
 }
 
+async function getSetupStatus() {
+  try {
+    const cookieStore = await cookies();
+    const cookieHeader = cookieStore.toString();
+    const apiUrl = process.env.API_URL || "http://localhost:3001";
+
+    const res = await fetch(`${apiUrl}/api/setup/status`, {
+      headers: { Cookie: cookieHeader },
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    return res.json() as Promise<{ completed: boolean }>;
+  } catch {
+    return null;
+  }
+}
+
 export default async function DashboardLayout({
   children,
 }: {
@@ -49,6 +67,14 @@ export default async function DashboardLayout({
     redirect("/portal");
   }
 
+  // Redirect owners to setup wizard if setup is not completed
+  if (session.role === "owner") {
+    const setupStatus = await getSetupStatus();
+    if (setupStatus && !setupStatus.completed) {
+      redirect("/setup");
+    }
+  }
+
   return (
     <div className="min-h-screen flex">
       <aside className="w-64 border-r border-[var(--border)] p-4 flex flex-col">
@@ -56,7 +82,12 @@ export default async function DashboardLayout({
         <SidebarNav />
         <SignOutButton />
       </aside>
-      <main className="flex-1 p-8">{children}</main>
+      <main className="flex-1 p-8">
+        {!session.user?.emailVerified && (
+          <EmailVerificationBanner email={session.user?.email} />
+        )}
+        {children}
+      </main>
     </div>
   );
 }

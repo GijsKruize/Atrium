@@ -7,8 +7,12 @@ import {
 } from "@nestjs/common";
 import { Throttle } from "@nestjs/throttler";
 import { ConfigService } from "@nestjs/config";
+import { InjectPinoLogger, PinoLogger } from "nestjs-pino";
 import { Response } from "express";
+import { render } from "@react-email/render";
+import { WelcomeEmail } from "@atrium/email";
 import { AuthService } from "../auth/auth.service";
+import { MailService } from "../mail/mail.service";
 import { SignupDto } from "./signup.dto";
 
 @Controller("onboarding")
@@ -16,6 +20,9 @@ export class OnboardingController {
   constructor(
     private authService: AuthService,
     private config: ConfigService,
+    private mail: MailService,
+    @InjectPinoLogger(OnboardingController.name)
+    private readonly logger: PinoLogger,
   ) {}
 
   @Post("signup")
@@ -132,6 +139,29 @@ export class OnboardingController {
     for (const cookie of allCookies) {
       res.append("Set-Cookie", cookie);
     }
+
+    // 6. Send welcome email (fire and forget)
+    const webUrl = this.config.get("WEB_URL", "http://localhost:3000");
+    render(
+      WelcomeEmail({
+        name: body.name,
+        organizationName: body.orgName,
+        portalUrl: `${webUrl}/dashboard`,
+      }),
+    )
+      .then((html) =>
+        this.mail.send(
+          body.email,
+          `Welcome to ${body.orgName}`,
+          html,
+        ),
+      )
+      .catch((err) => {
+        this.logger.warn(
+          { err, email: body.email },
+          "Failed to send welcome email",
+        );
+      });
 
     return { success: true };
   }

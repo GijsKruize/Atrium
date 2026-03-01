@@ -99,6 +99,10 @@ See `.env.example` for all variables.
 - API entrypoint runs `prisma db push` before starting
 - DB credentials and URLs are parameterized with defaults
 
+## Feature Development Rules
+
+- **Every new feature must include Playwright e2e tests.** When adding new pages, API endpoints, or user-facing functionality, always create corresponding tests in `e2e/tests/`. Follow the patterns in existing test files (auth, projects, portal, etc.). This is not optional — no feature is complete without e2e coverage.
+
 ## Key Patterns
 
 - Workspace packages referenced via `workspace:*` in package.json

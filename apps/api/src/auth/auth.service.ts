@@ -7,7 +7,7 @@ import { PrismaService } from "../prisma/prisma.service";
 import { MailService } from "../mail/mail.service";
 import { DEFAULT_STATUSES, DEFAULT_BRANDING } from "@atrium/shared";
 import { render } from "@react-email/render";
-import { InvitationEmail, MagicLinkEmail, ResetPasswordEmail } from "@atrium/email";
+import { InvitationEmail, MagicLinkEmail, ResetPasswordEmail, VerifyEmail } from "@atrium/email";
 
 @Injectable()
 export class AuthService {
@@ -25,7 +25,10 @@ export class AuthService {
       secret: this.config.getOrThrow("BETTER_AUTH_SECRET"),
       baseURL: this.config.get("BETTER_AUTH_URL", "http://localhost:3001"),
       basePath: "/api/auth",
-      trustedOrigins: [webUrl],
+      trustedOrigins: [
+        webUrl,
+        this.config.get("BETTER_AUTH_URL", "http://localhost:3001"),
+      ],
       emailAndPassword: {
         enabled: true,
         minPasswordLength: 8,
@@ -35,6 +38,19 @@ export class AuthService {
           await this.mail.send(
             user.email,
             "Reset your password",
+            html,
+          );
+        },
+      },
+      emailVerification: {
+        sendOnSignUp: true,
+        autoSignInAfterVerification: true,
+        callbackURL: `${webUrl}/verify-email?verified=true`,
+        sendVerificationEmail: async ({ user, url }) => {
+          const html = await render(VerifyEmail({ url }));
+          await this.mail.send(
+            user.email,
+            "Verify your email address",
             html,
           );
         },
@@ -95,6 +111,9 @@ export class AuthService {
           primaryColor: DEFAULT_BRANDING.primaryColor,
           accentColor: DEFAULT_BRANDING.accentColor,
         },
+      });
+      await tx.systemSettings.create({
+        data: { organizationId },
       });
     });
   }

@@ -54,7 +54,14 @@ test.describe("Auth", () => {
     await page.getByLabel(/password/i).fill(password);
     await page.getByRole("button", { name: /create account/i }).click();
 
-    // Should redirect to dashboard after signup
+    // Should redirect to setup wizard after signup (new accounts)
+    await expect(page).toHaveURL(/setup/, { timeout: 10000 });
+    await expect(page.getByRole("heading", { name: /welcome to atrium/i })).toBeVisible();
+
+    // Complete setup to get to dashboard
+    const apiUrl = "http://localhost:3001";
+    await page.request.post(`${apiUrl}/api/setup/complete`, {});
+    await page.goto("/dashboard");
     await expect(page).toHaveURL(/dashboard/, { timeout: 10000 });
     await expect(page.getByRole("heading", { name: /dashboard/i })).toBeVisible();
 
@@ -69,7 +76,7 @@ test.describe("Auth", () => {
     await page.getByLabel(/password/i).fill(password);
     await page.getByRole("button", { name: /sign in/i }).click();
 
-    // Should reach the dashboard again
+    // Should reach the dashboard (setup already completed)
     await expect(page).toHaveURL(/dashboard/, { timeout: 10000 });
     await expect(page.getByRole("heading", { name: /dashboard/i })).toBeVisible();
 

@@ -51,8 +51,8 @@ export default async function PortalLayout({
     <div
       style={
         {
-          "--primary": branding?.primaryColor || "#2563eb",
-          "--accent": branding?.accentColor || "#f59e0b",
+          "--primary": branding?.primaryColor || "#006b68",
+          "--accent": branding?.accentColor || "#ff6b5c",
         } as React.CSSProperties
       }
     >
@@ -62,6 +62,12 @@ export default async function PortalLayout({
           <img src={logoSrc} alt="Logo" className="h-8" />
         )}
         <span className="font-semibold flex-1">Client Portal</span>
+        <Link
+          href="/portal"
+          className="text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+        >
+          Projects
+        </Link>
         <Link
           href="/portal/settings"
           className="text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)]"

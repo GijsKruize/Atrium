@@ -6,12 +6,13 @@ import {
   ForbiddenException,
 } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
+import { NotificationsService } from "../notifications/notifications.service";
 import type { StorageProvider } from "../files/storage/storage.interface";
 import { STORAGE_PROVIDER } from "../files/storage/storage.interface";
 import type { UploadedFile } from "../files/files.service";
 import { randomUUID } from "crypto";
 import type { Response } from "express";
-import { paginationArgs, paginatedResponse } from "../common";
+import { paginationArgs, paginatedResponse, sanitizeFilename } from "../common";
 
 const ALLOWED_IMAGE_TYPES = new Set([
   "image/jpeg",
@@ -22,15 +23,11 @@ const ALLOWED_IMAGE_TYPES = new Set([
 
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
 
-function sanitizeFilename(filename: string): string {
-  const base = filename.replace(/^.*[/\\]/, "");
-  return base.replace(/[^\w.\- ]/g, "_").replace(/\.{2,}/g, ".") || "file";
-}
-
 @Injectable()
 export class UpdatesService {
   constructor(
     private prisma: PrismaService,
+    private notifications: NotificationsService,
     @Inject(STORAGE_PROVIDER) private storage: StorageProvider,
   ) {}
 
@@ -66,7 +63,7 @@ export class UpdatesService {
       await this.storage.upload(imageKey, image.buffer, image.mimetype);
     }
 
-    return this.prisma.projectUpdate.create({
+    const update = await this.prisma.projectUpdate.create({
       data: {
         content: dto.content,
         imageKey,
@@ -76,6 +73,10 @@ export class UpdatesService {
         authorId,
       },
     });
+
+    this.notifications.notifyProjectUpdate(projectId, dto.content);
+
+    return update;
   }
 
   async findByProject(
