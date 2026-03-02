@@ -1,7 +1,8 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { InvoicePdfService } from "./invoice-pdf.service";
 import { NotFoundException } from "@nestjs/common";
-import { PassThrough } from "stream";
+import { PassThrough, Writable } from "stream";
+import type { PrismaService } from "../prisma/prisma.service";
 
 // ---------------------------------------------------------------------------
 // PDFDocument mock — avoids real PDF generation in unit tests.
@@ -12,11 +13,11 @@ mock.module("pdfkit", () => {
   const MockPDFDocument = class {
     _stream: PassThrough;
 
-    constructor(_opts?: any) {
+    constructor(_opts?: Record<string, unknown>) {
       this._stream = new PassThrough();
     }
 
-    pipe(dest: any) {
+    pipe(dest: Writable) {
       // Emit a small amount of data so readable side is non-empty.
       dest.write(Buffer.from("%PDF-1.4 mock"));
       dest.end();
@@ -25,7 +26,7 @@ mock.module("pdfkit", () => {
 
     fontSize(_n: number) { return this; }
     fillColor(_c: string) { return this; }
-    text(_t: string, _x?: any, _y?: any, _opts?: any) { return this; }
+    text(_t: string, _x?: number, _y?: number, _opts?: Record<string, unknown>) { return this; }
     font(_f: string) { return this; }
     moveTo(_x: number, _y: number) { return this; }
     lineTo(_x: number, _y: number) { return this; }
@@ -62,7 +63,7 @@ function makeBasePrisma() {
 // ---------------------------------------------------------------------------
 // Shared invoice fixture
 // ---------------------------------------------------------------------------
-function makeInvoice(overrides: Partial<Record<string, any>> = {}) {
+function makeInvoice(overrides: Record<string, unknown> = {}) {
   return {
     id: "inv-1",
     invoiceNumber: "INV-0001",
@@ -89,7 +90,7 @@ describe("InvoicePdfService", () => {
 
   beforeEach(() => {
     prisma = makeBasePrisma();
-    service = new InvoicePdfService(prisma as any);
+    service = new InvoicePdfService(prisma as unknown as PrismaService);
   });
 
   // --- Not-found guard ---

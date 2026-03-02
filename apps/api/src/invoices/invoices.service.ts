@@ -8,6 +8,12 @@ import { NotificationsService } from "../notifications/notifications.service";
 import { paginationArgs, paginatedResponse } from "../common";
 import { CreateInvoiceDto, UpdateInvoiceDto, InvoiceListQueryDto } from "./invoices.dto";
 
+interface InvoiceWhereInput {
+  organizationId?: string;
+  projectId?: string;
+  status?: string;
+}
+
 @Injectable()
 export class InvoicesService {
   constructor(
@@ -15,7 +21,7 @@ export class InvoicesService {
     private notifications: NotificationsService,
   ) {}
 
-  async create(dto: CreateInvoiceDto, orgId: string, retries = 0): Promise<any> {
+  async create(dto: CreateInvoiceDto, orgId: string, retries = 0) {
     try {
       return await this.prisma.$transaction(async (tx) => {
         const lastInvoice = await tx.invoice.findFirst({
@@ -50,8 +56,8 @@ export class InvoicesService {
           include: { lineItems: true },
         });
       }, { isolationLevel: 'Serializable' });
-    } catch (err: any) {
-      if (err?.code === "P2002" && retries < 3) {
+    } catch (err) {
+      if (err instanceof Error && "code" in err && (err as { code: string }).code === "P2002" && retries < 3) {
         return this.create(dto, orgId, retries + 1);
       }
       throw err;
@@ -60,7 +66,7 @@ export class InvoicesService {
 
   async findAll(orgId: string, query: InvoiceListQueryDto) {
     const { page = 1, limit = 20, projectId, status } = query;
-    const where: any = { organizationId: orgId };
+    const where: InvoiceWhereInput = { organizationId: orgId };
     if (projectId) where.projectId = projectId;
     if (status) where.status = status;
 
@@ -209,7 +215,7 @@ export class InvoicesService {
   }
 
   async getStats(orgId: string, projectId?: string) {
-    const where: any = { organizationId: orgId };
+    const where: InvoiceWhereInput = { organizationId: orgId };
     if (projectId) where.projectId = projectId;
 
     const [counts, totals] = await Promise.all([

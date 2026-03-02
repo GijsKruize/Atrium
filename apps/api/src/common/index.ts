@@ -10,3 +10,10 @@ export { AllExceptionsFilter } from "./filters/http-exception.filter";
 export { PaginationQueryDto } from "./dto/pagination.dto";
 export { paginationArgs, paginatedResponse } from "./helpers/paginate";
 export { sanitizeFilename } from "./utils/sanitize";
+export type {
+  AuthUser,
+  AuthSession,
+  OrgMember,
+  FullOrganization,
+  AuthenticatedRequest,
+} from "./types/authenticated-request";

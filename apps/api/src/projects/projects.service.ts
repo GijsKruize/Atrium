@@ -3,6 +3,19 @@ import { PrismaService } from "../prisma/prisma.service";
 import { CreateProjectDto, UpdateProjectDto } from "./projects.dto";
 import { paginationArgs, paginatedResponse } from "../common";
 
+interface ProjectWhereInput {
+  organizationId?: string;
+  archivedAt?: null | Date;
+  name?: { contains: string; mode: string };
+  status?: string;
+  clients?: { some: { userId: string } };
+}
+
+interface ProjectUpdateInput {
+  startDate?: Date | null;
+  endDate?: Date | null;
+}
+
 @Injectable()
 export class ProjectsService {
   constructor(private prisma: PrismaService) {}
@@ -18,7 +31,7 @@ export class ProjectsService {
     },
   ) {
     const { page = 1, limit = 20, search, status, archived } = query;
-    const where: any = { organizationId };
+    const where: ProjectWhereInput = { organizationId };
 
     if (archived !== "true") {
       where.archivedAt = null;
@@ -77,7 +90,7 @@ export class ProjectsService {
     query: { page?: number; limit?: number; search?: string },
   ) {
     const { page = 1, limit = 20, search } = query;
-    const where: any = {
+    const where: ProjectWhereInput = {
       organizationId,
       archivedAt: null,
       clients: { some: { userId: clientUserId } },
@@ -129,7 +142,7 @@ export class ProjectsService {
     }
 
     const { clientUserIds, startDate, endDate, ...rest } = data;
-    const dateFields: any = {};
+    const dateFields: ProjectUpdateInput = {};
     if (startDate !== undefined) dateFields.startDate = startDate ? new Date(startDate) : null;
     if (endDate !== undefined) dateFields.endDate = endDate ? new Date(endDate) : null;
 
