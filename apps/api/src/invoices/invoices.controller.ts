@@ -90,6 +90,9 @@ export class InvoicesController {
     const safeName = sanitizeFilename(filename);
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `attachment; filename="${safeName}"`);
+    stream.on("error", () => {
+      if (!res.headersSent) res.status(500).end();
+    });
     stream.pipe(res);
   }
 
@@ -113,6 +116,9 @@ export class InvoicesController {
     const safeName = sanitizeFilename(filename);
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `attachment; filename="${safeName}"`);
+    stream.on("error", () => {
+      if (!res.headersSent) res.status(500).end();
+    });
     stream.pipe(res);
   }
 

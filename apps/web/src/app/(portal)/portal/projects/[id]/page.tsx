@@ -45,6 +45,7 @@ interface ProjectUpdateRecord {
   attachmentName?: string;
   attachmentMimeType?: string;
   hasAttachment: boolean;
+  fileId?: string;
   author: { id: string; name: string };
   createdAt: string;
 }
@@ -166,6 +167,27 @@ export default function PortalProjectDetailPage() {
     } finally {
       setUploading(false);
       e.target.value = "";
+    }
+  };
+
+  const handleAttachmentDownload = async (fileId: string, filename: string) => {
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/files/${fileId}/download`,
+        { credentials: "include" },
+      );
+      if (!res.ok) throw new Error("Download failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -295,6 +317,9 @@ export default function PortalProjectDetailPage() {
               {updates.map((update) => {
                 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
                 const isImage = IMAGE_TYPES.has(update.attachmentMimeType || "");
+                const attachmentSrc = update.fileId
+                  ? `${API_URL}/api/files/${update.fileId}/download`
+                  : update.attachmentUrl || `${API_URL}/api/updates/${update.id}/attachment`;
                 return (
                   <div
                     key={update.id}
@@ -309,22 +334,24 @@ export default function PortalProjectDetailPage() {
                     <p className="text-sm whitespace-pre-wrap">{linkify(update.content)}</p>
                     {update.hasAttachment && isImage && (
                       <img
-                        src={update.attachmentUrl || `${API_URL}/api/updates/${update.id}/attachment`}
+                        src={attachmentSrc}
                         alt=""
                         className="mt-3 max-w-full max-h-80 rounded-lg border border-[var(--border)]"
                       />
                     )}
                     {update.hasAttachment && !isImage && (
-                      <a
-                        href={update.attachmentUrl || `${API_URL}/api/updates/${update.id}/attachment`}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <button
+                        onClick={() =>
+                          update.fileId
+                            ? handleAttachmentDownload(update.fileId, update.attachmentName || "download")
+                            : window.open(attachmentSrc, "_blank")
+                        }
                         className="mt-3 flex items-center gap-2 px-3 py-2 border border-[var(--border)] rounded-lg text-sm hover:bg-[var(--muted)] transition-colors w-fit"
                       >
                         <FileText size={16} className="text-[var(--muted-foreground)] shrink-0" />
                         <span className="truncate max-w-[200px]">{update.attachmentName || "Download"}</span>
                         <Download size={14} className="text-[var(--muted-foreground)] shrink-0" />
-                      </a>
+                      </button>
                     )}
                   </div>
                 );
