@@ -12,9 +12,11 @@ mock.module("pdfkit", () => {
   // A minimal stand-in that provides the methods InvoicePdfService calls.
   const MockPDFDocument = class {
     _stream: PassThrough;
+    page: { height: number; margins: { top: number; bottom: number } };
 
     constructor(_opts?: Record<string, unknown>) {
       this._stream = new PassThrough();
+      this.page = { height: 842, margins: { top: 50, bottom: 50 } };
     }
 
     pipe(dest: Writable) {
@@ -33,6 +35,7 @@ mock.module("pdfkit", () => {
     strokeColor(_c: string) { return this; }
     lineWidth(_w: number) { return this; }
     stroke() { return this; }
+    addPage() { return this; }
     end() { this._stream.end(); }
   };
 

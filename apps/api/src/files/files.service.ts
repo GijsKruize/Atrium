@@ -117,9 +117,13 @@ export class FilesService {
   async findByProject(
     projectId: string,
     organizationId: string,
+    userId: string,
+    role: string,
     page = 1,
     limit = 20,
   ) {
+    await this.assertProjectAccess(projectId, userId, role);
+
     const where = { projectId, organizationId };
     const [data, total] = await Promise.all([
       this.prisma.file.findMany({

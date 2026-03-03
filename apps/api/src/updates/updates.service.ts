@@ -15,6 +15,7 @@ import type { Response } from "express";
 import { paginationArgs, paginatedResponse, sanitizeFilename } from "../common";
 
 const MAX_ATTACHMENT_SIZE = 10 * 1024 * 1024; // 10MB
+const PRIVILEGED_ROLES = new Set(["owner", "admin"]);
 
 const IMAGE_TYPES = new Set([
   "image/jpeg",
@@ -156,7 +157,7 @@ export class UpdatesService {
     await this.prisma.projectUpdate.delete({ where: { id } });
   }
 
-  async getAttachment(id: string, organizationId: string, res: Response) {
+  async getAttachment(id: string, organizationId: string, userId: string, role: string, res: Response) {
     const update = await this.prisma.projectUpdate.findFirst({
       where: { id, organizationId },
     });
@@ -164,15 +165,30 @@ export class UpdatesService {
       throw new NotFoundException("Attachment not found");
     }
 
+    await this.assertProjectAccess(update.projectId, userId, role);
+
     const { body, contentType } = await this.storage.download(update.attachmentKey);
     res.setHeader("Content-Type", contentType);
     if (update.attachmentName) {
+      const safeAscii = update.attachmentName.replace(/[^\x20-\x7E]/g, "_").replace(/["\\]/g, "_");
+      const encodedFilename = encodeURIComponent(update.attachmentName).replace(/['()]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`);
       res.setHeader(
         "Content-Disposition",
-        `inline; filename="${update.attachmentName}"`,
+        `inline; filename="${safeAscii}"; filename*=UTF-8''${encodedFilename}`,
       );
     }
     body.pipe(res);
+  }
+
+  private async assertProjectAccess(projectId: string, userId: string, role: string) {
+    if (PRIVILEGED_ROLES.has(role)) return;
+
+    const assignment = await this.prisma.projectClient.findFirst({
+      where: { projectId, userId },
+    });
+    if (!assignment) {
+      throw new ForbiddenException("You do not have access to this attachment");
+    }
   }
 
   static isImageType(mimeType: string | null | undefined): boolean {

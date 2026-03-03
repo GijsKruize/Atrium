@@ -50,11 +50,15 @@ export class FilesController {
   findByProject(
     @Param("projectId") projectId: string,
     @CurrentOrg("id") orgId: string,
+    @CurrentUser("id") userId: string,
+    @CurrentMember("role") role: string,
     @Query() pagination: PaginationQueryDto,
   ) {
     return this.filesService.findByProject(
       projectId,
       orgId,
+      userId,
+      role,
       pagination.page,
       pagination.limit,
     );

@@ -33,6 +33,9 @@ const mockPrisma = {
     findMany: mock(() => Promise.resolve([])),
     findFirst: mock(() => Promise.resolve(null)),
   },
+  member: {
+    count: mock(() => Promise.resolve(2)),
+  },
   $transaction: mock((args: Promise<unknown>[]) => Promise.all(args)),
 };
 

@@ -34,6 +34,11 @@ function makeBasePrisma() {
     invoiceLineItem: {
       deleteMany: mock(() => Promise.resolve({ count: 0 })),
     },
+    project: {
+      findFirst: mock(() =>
+        Promise.resolve({ id: "proj-1", organizationId: "org-1" }),
+      ),
+    },
     projectClient: {
       findMany: mock(() => Promise.resolve([])),
       findFirst: mock(() => Promise.resolve(null)),

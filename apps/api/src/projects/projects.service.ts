@@ -6,7 +6,7 @@ import { paginationArgs, paginatedResponse } from "../common";
 interface ProjectWhereInput {
   organizationId?: string;
   archivedAt?: null | Date;
-  name?: { contains: string; mode: string };
+  name?: { contains: string; mode: "default" | "insensitive" };
   status?: string;
   clients?: { some: { userId: string } };
 }
@@ -114,6 +114,16 @@ export class ProjectsService {
 
   async create(data: CreateProjectDto, organizationId: string) {
     const { clientUserIds, startDate, endDate, ...rest } = data;
+
+    if (clientUserIds?.length) {
+      const validMembers = await this.prisma.member.count({
+        where: { organizationId, userId: { in: clientUserIds } },
+      });
+      if (validMembers !== clientUserIds.length) {
+        throw new BadRequestException("One or more client user IDs are not members of this organization");
+      }
+    }
+
     return this.prisma.project.create({
       data: {
         ...rest,
@@ -156,11 +166,19 @@ export class ProjectsService {
     }
 
     if (clientUserIds !== undefined) {
-      // Use a transaction to update project fields + replace client assignments
+      if (clientUserIds.length) {
+        const validMembers = await this.prisma.member.count({
+          where: { organizationId, userId: { in: clientUserIds } },
+        });
+        if (validMembers !== clientUserIds.length) {
+          throw new BadRequestException("One or more client user IDs are not members of this organization");
+        }
+      }
+
       const [, project] = await this.prisma.$transaction([
         this.prisma.projectClient.deleteMany({ where: { projectId: id } }),
         this.prisma.project.update({
-          where: { id },
+          where: { id, organizationId },
           data: {
             ...rest,
             ...dateFields,

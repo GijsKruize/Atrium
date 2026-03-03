@@ -2,7 +2,9 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  BadRequestException,
 } from "@nestjs/common";
+import type { Invoice, InvoiceLineItem } from "@atrium/database";
 import { PrismaService } from "../prisma/prisma.service";
 import { NotificationsService } from "../notifications/notifications.service";
 import { paginationArgs, paginatedResponse } from "../common";
@@ -21,7 +23,16 @@ export class InvoicesService {
     private notifications: NotificationsService,
   ) {}
 
-  async create(dto: CreateInvoiceDto, orgId: string, retries = 0) {
+  async create(dto: CreateInvoiceDto, orgId: string, retries = 0): Promise<Invoice & { lineItems: InvoiceLineItem[] }> {
+    if (dto.projectId) {
+      const project = await this.prisma.project.findFirst({
+        where: { id: dto.projectId, organizationId: orgId },
+      });
+      if (!project) {
+        throw new ForbiddenException("Project does not belong to this organization");
+      }
+    }
+
     try {
       return await this.prisma.$transaction(async (tx) => {
         const lastInvoice = await tx.invoice.findFirst({
@@ -153,6 +164,22 @@ export class InvoicesService {
       where: { id, organizationId: orgId },
     });
     if (!invoice) throw new NotFoundException("Invoice not found");
+
+    if (dto.status && dto.status !== invoice.status) {
+      const allowedTransitions: Record<string, string[]> = {
+        draft: ["sent"],
+        sent: ["paid", "overdue", "cancelled"],
+        overdue: ["paid", "cancelled"],
+        paid: [],
+        cancelled: [],
+      };
+      const allowed = allowedTransitions[invoice.status] ?? [];
+      if (!allowed.includes(dto.status)) {
+        throw new BadRequestException(
+          `Cannot transition from '${invoice.status}' to '${dto.status}'`,
+        );
+      }
+    }
 
     const isTransitionToSent =
       dto.status === "sent" && invoice.status !== "sent";
