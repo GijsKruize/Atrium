@@ -12,10 +12,9 @@ import { STORAGE_PROVIDER } from "../files/storage/storage.interface";
 import type { UploadedFile } from "../files/files.service";
 import { randomUUID } from "crypto";
 import type { Response } from "express";
-import { paginationArgs, paginatedResponse, sanitizeFilename } from "../common";
+import { paginationArgs, paginatedResponse, sanitizeFilename, contentDisposition, assertProjectAccess } from "../common";
 
 const MAX_ATTACHMENT_SIZE = 10 * 1024 * 1024; // 10MB
-const PRIVILEGED_ROLES = new Set(["owner", "admin"]);
 
 const IMAGE_TYPES = new Set([
   "image/jpeg",
@@ -190,30 +189,14 @@ export class UpdatesService {
       throw new NotFoundException("Attachment not found");
     }
 
-    await this.assertProjectAccess(update.projectId, userId, role);
+    await assertProjectAccess(this.prisma, update.projectId, userId, role);
 
     const { body, contentType } = await this.storage.download(update.attachmentKey);
     res.setHeader("Content-Type", contentType);
     if (update.attachmentName) {
-      const safeAscii = update.attachmentName.replace(/[^\x20-\x7E]/g, "_").replace(/["\\]/g, "_");
-      const encodedFilename = encodeURIComponent(update.attachmentName).replace(/['()]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`);
-      res.setHeader(
-        "Content-Disposition",
-        `inline; filename="${safeAscii}"; filename*=UTF-8''${encodedFilename}`,
-      );
+      res.setHeader("Content-Disposition", contentDisposition(update.attachmentName, "inline"));
     }
     body.pipe(res);
-  }
-
-  private async assertProjectAccess(projectId: string, userId: string, role: string) {
-    if (PRIVILEGED_ROLES.has(role)) return;
-
-    const assignment = await this.prisma.projectClient.findFirst({
-      where: { projectId, userId },
-    });
-    if (!assignment) {
-      throw new ForbiddenException("You do not have access to this attachment");
-    }
   }
 
   static isImageType(mimeType: string | null | undefined): boolean {

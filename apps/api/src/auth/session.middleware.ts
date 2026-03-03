@@ -1,7 +1,7 @@
 import { Injectable, NestMiddleware } from "@nestjs/common";
 import { Request, Response, NextFunction } from "express";
 import { AuthService } from "./auth.service";
-import type { AuthenticatedRequest, OrgMember } from "../common";
+import type { AuthenticatedRequest, AuthUser, AuthSession, FullOrganization, OrgMember } from "../common";
 
 @Injectable()
 export class SessionMiddleware implements NestMiddleware {
@@ -24,8 +24,8 @@ export class SessionMiddleware implements NestMiddleware {
       });
 
       if (session) {
-        authReq.user = session.user;
-        authReq.session = session.session;
+        authReq.user = session.user as AuthUser;
+        authReq.session = session.session as AuthSession;
       }
 
       const activeOrgId = (
@@ -33,11 +33,9 @@ export class SessionMiddleware implements NestMiddleware {
       )?.activeOrganizationId;
       if (activeOrgId) {
         const getFullOrg = (
-          this.authService.auth.api as Record<
+          this.authService.auth.api as unknown as Record<
             string,
-            | ((opts: { headers: Headers }) => Promise<{
-                members?: OrgMember[];
-              }>)
+            | ((opts: { headers: Headers }) => Promise<FullOrganization | null>)
             | undefined
           >
         ).getFullOrganization;
@@ -45,7 +43,7 @@ export class SessionMiddleware implements NestMiddleware {
           const orgData = await getFullOrg({ headers });
 
           if (orgData) {
-            authReq.organization = orgData;
+            authReq.organization = orgData as FullOrganization;
             const member = orgData.members?.find(
               (m: OrgMember) => m.userId === session!.user.id,
             );
