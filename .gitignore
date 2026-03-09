@@ -12,3 +12,7 @@ playwright-report/
 blob-report/
 e2e/.auth/
 .claude/
+.firebase/
+.firebaserc
+*.pem
+*.key
