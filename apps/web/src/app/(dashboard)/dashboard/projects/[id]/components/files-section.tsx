@@ -55,7 +55,7 @@ export function FilesSection({
   const handleDownload = async (fileId: string, filename: string) => {
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/files/${fileId}/download`,
+        `${process.env.NEXT_PUBLIC_API_URL || ""}/api/files/${fileId}/download`,
         { credentials: "include" },
       );
       if (!res.ok) throw new Error("Download failed");

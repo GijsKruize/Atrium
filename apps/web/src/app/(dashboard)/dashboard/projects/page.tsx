@@ -80,8 +80,12 @@ export default function ProjectsPage() {
     setPage(1);
   }, [debouncedSearch, statusFilter, showArchived]);
 
+  const [creating, setCreating] = useState(false);
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (creating) return;
+    setCreating(true);
     try {
       await apiFetch<Project>("/projects", {
         method: "POST",
@@ -93,6 +97,8 @@ export default function ProjectsPage() {
       loadProjects();
     } catch (err) {
       console.error(err);
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -134,9 +140,10 @@ export default function ProjectsPage() {
           />
           <button
             type="submit"
-            className="px-4 py-2 bg-[var(--primary)] text-white rounded-lg text-sm"
+            disabled={creating}
+            className="px-4 py-2 bg-[var(--primary)] text-white rounded-lg text-sm disabled:opacity-50"
           >
-            Create
+            {creating ? "Creating..." : "Create"}
           </button>
         </form>
       )}

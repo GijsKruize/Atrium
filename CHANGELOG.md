@@ -2,6 +2,46 @@
 
 All notable changes to Atrium will be documented in this file.
 
+## [1.1.0] — 2026-03-09
+
+### Added
+
+#### Billing & Subscriptions
+- Stripe integration with test/live mode toggle via `STRIPE_MODE`
+- Subscription plans (Free, Pro, Lifetime) with DB-seeded configuration
+- Checkout flow via Stripe Checkout Sessions
+- Stripe Customer Portal for managing payment methods
+- Webhook handler for checkout, subscription updates, invoice events
+- Usage meters (projects, storage, team members, clients) on billing page
+- Plan limit enforcement via `PlanGuard` and `@PlanLimit()` decorator
+- Lifetime plan with seat cap tracking
+- Lazy free plan initialization for orgs created before billing was enabled
+
+#### Performance
+- In-memory session cache (30s TTL) — reduces DB round trips from 8+ to 2 per page load
+- Auth routes bypass and invalidate cache to prevent stale org context
+
+### Fixed
+
+- Auth controller uses `BETTER_AUTH_URL` for request origin instead of `WEB_URL`
+- Session cache invalidation on auth mutations prevents 401 "Organization context required" errors
+- Invoice update/delete mutations now scope Prisma queries to `organizationId` (prevents potential cross-org TOCTOU race)
+- Browser autofill no longer overrides dark mode input backgrounds
+- Sign-in button shows spinner during login
+
+### Security
+
+- Removed scripts containing hardcoded credentials
+- Sanitized infrastructure docs (removed project IDs and service refs)
+- GitHub Actions deploy workflow uses variables instead of hardcoded URLs
+- Added `.firebase/`, `.firebaserc`, `firebase.json`, `*.pem`, `*.key` to `.gitignore`
+
+### Database
+
+- New models: `SubscriptionPlan`, `Subscription`
+- Subscription linked to Organization (1:1) with Stripe customer/subscription IDs
+- Plan features stored as string array, limits as integers (-1 = unlimited)
+
 ## [1.0.2] — 2026-03-02
 
 ### Security

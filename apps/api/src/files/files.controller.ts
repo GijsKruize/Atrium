@@ -14,7 +14,7 @@ import {
 import { FileInterceptor } from "@nestjs/platform-express";
 import { Response } from "express";
 import { FilesService, UploadedFile as UploadedFileType } from "./files.service";
-import { AuthGuard, RolesGuard, Roles, CurrentUser, CurrentOrg, CurrentMember, PaginationQueryDto, contentDisposition } from "../common";
+import { AuthGuard, RolesGuard, Roles, PlanLimit, CurrentUser, CurrentOrg, CurrentMember, PaginationQueryDto, contentDisposition } from "../common";
 
 @Controller("files")
 @UseGuards(AuthGuard, RolesGuard)
@@ -23,6 +23,7 @@ export class FilesController {
 
   @Post("upload")
   @Roles("owner", "admin")
+  @PlanLimit("storage")
   @UseInterceptors(FileInterceptor("file", { limits: { fileSize: 200 * 1024 * 1024 } }))
   upload(
     @UploadedFile() file: UploadedFileType,

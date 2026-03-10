@@ -18,10 +18,12 @@ import { TasksModule } from "./tasks/tasks.module";
 import { InvoicesModule } from "./invoices/invoices.module";
 import { SettingsModule } from "./settings/settings.module";
 import { SetupModule } from "./setup/setup.module";
+import { BillingModule } from "./billing/billing.module";
 import { HealthController } from "./health.controller";
 import { SessionMiddleware } from "./auth/session.middleware";
 import { AllExceptionsFilter } from "./common";
 import { CsrfGuard } from "./common/guards/csrf.guard";
+import { PlanGuard } from "./common/guards/plan.guard";
 
 @Module({
   imports: [
@@ -62,6 +64,7 @@ import { CsrfGuard } from "./common/guards/csrf.guard";
     InvoicesModule,
     SettingsModule,
     SetupModule,
+    BillingModule,
   ],
   controllers: [HealthController],
   providers: [
@@ -76,6 +79,10 @@ import { CsrfGuard } from "./common/guards/csrf.guard";
     {
       provide: APP_GUARD,
       useClass: CsrfGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: PlanGuard,
     },
   ],
 })

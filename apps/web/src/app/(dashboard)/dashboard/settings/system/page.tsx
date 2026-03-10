@@ -61,7 +61,7 @@ export default function SystemSettingsPage() {
   const [hasResendApiKey, setHasResendApiKey] = useState(false);
   const [hasSmtpPass, setHasSmtpPass] = useState(false);
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
   useEffect(() => {
     Promise.all([

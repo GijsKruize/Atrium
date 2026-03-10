@@ -11,14 +11,18 @@ import { InjectPinoLogger, PinoLogger } from "nestjs-pino";
 import { Response } from "express";
 import { render } from "@react-email/render";
 import { WelcomeEmail } from "@atrium/email";
+import { Public } from "../common";
 import { AuthService } from "../auth/auth.service";
+import { BillingService } from "../billing/billing.service";
 import { MailService } from "../mail/mail.service";
 import { SignupDto } from "./signup.dto";
 
 @Controller("onboarding")
+@Public()
 export class OnboardingController {
   constructor(
     private authService: AuthService,
+    private billingService: BillingService,
     private config: ConfigService,
     private mail: MailService,
     @InjectPinoLogger(OnboardingController.name)
@@ -67,12 +71,16 @@ export class OnboardingController {
     const cookieStr = setCookies.map((c) => c.split(";")[0]).join("; ");
 
     // 3. Create organization using the new session
-    const slug = body.orgName
+    const baseSlug = body.orgName
       .toLowerCase()
       .replace(/[^a-z0-9\s-]/g, "")
       .replace(/\s+/g, "-")
       .replace(/-+/g, "-")
       .replace(/^-|-$/g, "");
+
+    // Append random suffix to avoid slug collisions from orgs with the same name
+    const suffix = Math.random().toString(36).substring(2, 8);
+    const slug = `${baseSlug}-${suffix}`;
 
     const orgReq = new globalThis.Request(
       `${baseUrl}/api/auth/organization/create`,
@@ -96,6 +104,11 @@ export class OnboardingController {
     }
 
     if (!orgRes.ok) {
+      const orgErr = await orgRes.json().catch(() => ({}));
+      this.logger.error(
+        { status: orgRes.status, orgErr },
+        "Organization creation failed",
+      );
       for (const cookie of allCookies) {
         res.append("Set-Cookie", cookie);
       }
@@ -162,6 +175,27 @@ export class OnboardingController {
           "Failed to send welcome email",
         );
       });
+
+    // 7. Create checkout session for paid plans
+    const billingEnabled = this.config.get("BILLING_ENABLED", "false");
+    if (billingEnabled === "true" && body.planSlug && body.planSlug !== "free" && orgId) {
+      try {
+        const successUrl = `${webUrl}/setup?checkout=success`;
+        const cancelUrl = `${webUrl}/setup?checkout=cancelled`;
+        const result = await this.billingService.createCheckoutSession(
+          orgId,
+          body.planSlug,
+          successUrl,
+          cancelUrl,
+        );
+        return { success: true, checkoutUrl: result.url };
+      } catch (err) {
+        this.logger.warn(
+          { err, planSlug: body.planSlug, orgId },
+          "Failed to create checkout session during signup, falling back to free plan",
+        );
+      }
+    }
 
     return { success: true };
   }

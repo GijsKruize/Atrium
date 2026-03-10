@@ -75,7 +75,7 @@ export function PortalInvoicesSection({
   const handleDownloadPdf = async (invoiceId: string, invoiceNumber: string) => {
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/invoices/mine/${invoiceId}/pdf`,
+        `${process.env.NEXT_PUBLIC_API_URL || ""}/api/invoices/mine/${invoiceId}/pdf`,
         { credentials: "include" },
       );
       if (!res.ok) throw new Error("Download failed");

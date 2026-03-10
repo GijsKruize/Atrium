@@ -54,19 +54,30 @@ This starts the web app at [localhost:3000](http://localhost:3000) and the API a
 
 ### Docker (Production)
 
+A pre-built image is available on Docker Hub:
+
+```bash
+docker pull vibralabs/atrium:latest
+```
+
+The quickest way to run Atrium with PostgreSQL:
+
+```bash
+curl -O https://raw.githubusercontent.com/Vibra-Labs/Atrium/main/docker-compose.yml
+BETTER_AUTH_SECRET=$(openssl rand -base64 32) \
+POSTGRES_PASSWORD=your-secure-password \
+docker compose up -d
+```
+
+Or build from source:
+
 ```bash
 git clone https://github.com/Vibra-Labs/Atrium.git
 cd atrium
-docker compose up --build
-```
-
-For production, override the defaults with your own secrets:
-
-```bash
-BETTER_AUTH_SECRET=$(openssl rand -base64 32) \
-POSTGRES_PASSWORD=your-secure-password \
 docker compose up --build -d
 ```
+
+The unified image (`vibralabs/atrium`) bundles the API, web app, and a Caddy reverse proxy into a single container on port 8080. It works with any container platform — Docker Compose, Coolify, Portainer, Unraid, etc.
 
 ### First Use
 
@@ -79,6 +90,17 @@ docker compose up --build -d
 - [Configuration & Environment Variables](docs/configuration.md)
 - [Development Guide & Scripts](docs/development.md)
 - [Security](docs/security.md)
+
+## Roadmap
+
+- [x] Billing & subscriptions (Stripe)
+- [x] Setup wizard for new organizations
+- [x] Email notifications (Resend + SMTP)
+- [x] Docker Hub image (`vibralabs/atrium`)
+- [ ] Unraid Community App template
+- [ ] Contract signatures
+- [ ] Client-facing invoice payments
+- [ ] Webhooks / Zapier integration
 
 ## Contributing
 

@@ -220,7 +220,7 @@ export function InvoicesSection({
   const handleDownloadPdf = async (invoiceId: string, invoiceNumber: string) => {
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/invoices/${invoiceId}/pdf`,
+        `${process.env.NEXT_PUBLIC_API_URL || ""}/api/invoices/${invoiceId}/pdf`,
         { credentials: "include" },
       );
       if (!res.ok) throw new Error("Download failed");
