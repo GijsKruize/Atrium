@@ -20,6 +20,7 @@ import {
   AuthGuard,
   RolesGuard,
   Roles,
+  PlanLimit,
   CurrentOrg,
   CurrentUser,
 } from "../common";
@@ -75,6 +76,7 @@ export class ProjectsController {
 
   @Post()
   @Roles("owner", "admin")
+  @PlanLimit("projects")
   create(@Body() dto: CreateProjectDto, @CurrentOrg("id") orgId: string) {
     return this.projectsService.create(dto, orgId);
   }

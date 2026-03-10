@@ -37,9 +37,16 @@ export class SessionMiddleware implements NestMiddleware {
 
     try {
       const token = this.extractSessionToken(req);
+      const isAuthRoute = req.originalUrl.startsWith("/api/auth/");
 
-      // Check cache first
-      if (token) {
+      // Auth routes mutate session state (login, set-active org, etc.)
+      // so always bypass cache and invalidate stale entries
+      if (isAuthRoute && token) {
+        this.cache.delete(token);
+      }
+
+      // Check cache first (skip for auth routes)
+      if (!isAuthRoute && token) {
         const cached = this.cache.get(token);
         if (cached && cached.expiresAt > Date.now()) {
           authReq.user = cached.user;

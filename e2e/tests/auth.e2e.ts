@@ -10,9 +10,19 @@ test.describe("Auth", () => {
 
   test("shows signup page", async ({ page }) => {
     await page.goto("/signup");
-    await expect(
-      page.getByRole("heading", { name: /create your account/i }),
-    ).toBeVisible();
+
+    // If billing is enabled, the plan selection step shows first
+    const planHeading = page.getByRole("heading", { name: /choose your plan/i });
+    const accountHeading = page.getByRole("heading", { name: /create your account/i });
+
+    const hasPlanStep = await planHeading.isVisible().catch(() => false);
+    if (hasPlanStep) {
+      await expect(planHeading).toBeVisible();
+      // Continue past plan selection
+      await page.getByRole("button", { name: /continue/i }).click();
+    }
+
+    await expect(accountHeading).toBeVisible();
     await expect(page.getByLabel(/your name/i)).toBeVisible();
     await expect(page.getByLabel(/agency/i)).toBeVisible();
   });
@@ -25,6 +35,8 @@ test.describe("Auth", () => {
 
   test("signup page links to login", async ({ page }) => {
     await page.goto("/signup");
+
+    // If billing is enabled, plan step shows first — it also has a login link
     await page.getByRole("link", { name: /sign in/i }).click();
     await expect(page).toHaveURL(/login/);
   });
@@ -48,6 +60,16 @@ test.describe("Auth", () => {
 
     // Sign up a new account
     await page.goto("/signup");
+
+    // Handle plan selection step if visible (billing enabled)
+    const planHeading = page.getByRole("heading", { name: /choose your plan/i });
+    const hasPlanStep = await planHeading.isVisible().catch(() => false);
+    if (hasPlanStep) {
+      // Select the free plan (default) and continue
+      await page.getByRole("button", { name: /continue/i }).click();
+    }
+
+    await expect(page.getByRole("heading", { name: /create your account/i })).toBeVisible();
     await page.getByLabel(/your name/i).fill("Login Test");
     await page.getByLabel(/agency/i).fill("Login Test Org");
     await page.getByLabel(/email/i).fill(email);

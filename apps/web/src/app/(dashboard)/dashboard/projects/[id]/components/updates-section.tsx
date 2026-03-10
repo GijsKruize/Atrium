@@ -91,7 +91,7 @@ export function UpdatesSection({
   const handleAttachmentDownload = async (fileId: string, filename: string) => {
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/files/${fileId}/download`,
+        `${process.env.NEXT_PUBLIC_API_URL || ""}/api/files/${fileId}/download`,
         { credentials: "include" },
       );
       if (!res.ok) throw new Error("Download failed");
@@ -211,7 +211,7 @@ export function UpdatesSection({
 
       <div className="space-y-3">
         {updates.map((update) => {
-          const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+          const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
           const isImage = IMAGE_TYPES.has(update.attachmentMimeType || "");
           const attachmentSrc = update.fileId
             ? `${API_URL}/api/files/${update.fileId}/download`

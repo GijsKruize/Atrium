@@ -12,8 +12,15 @@ function loadEnv(filePath: string) {
     const key = trimmed.slice(0, eq);
     if (process.env[key] !== undefined) continue; // don't override existing
     let val = trimmed.slice(eq + 1);
-    if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
-      val = val.slice(1, -1);
+    const quote = val[0];
+    if (quote === '"' || quote === "'") {
+      const endIdx = val.indexOf(quote, 1);
+      if (endIdx !== -1) val = val.slice(1, endIdx);
+      else val = val.slice(1);
+    } else {
+      // Strip inline comments for unquoted values
+      const hashIdx = val.indexOf(" #");
+      if (hashIdx !== -1) val = val.slice(0, hashIdx).trim();
     }
     process.env[key] = val;
   }
@@ -66,8 +73,16 @@ import cookieParser from "cookie-parser";
 import helmet from "helmet";
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  const app = await NestFactory.create(AppModule, {
+    bufferLogs: true,
+    rawBody: true,
+  });
   app.useLogger(app.get(Logger));
+
+  // Trust reverse proxies (Cloud Run, Firebase Hosting, Caddy) so that
+  // req.protocol reflects the original HTTPS and cookies set correctly.
+  const expressApp = app.getHttpAdapter().getInstance();
+  expressApp.set("trust proxy", true);
 
   app.use(cookieParser());
 

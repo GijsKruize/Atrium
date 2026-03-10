@@ -195,9 +195,11 @@ export class InvoicesService {
 
     if (dto.lineItems) {
       updated = await this.prisma.$transaction(async (tx) => {
-        await tx.invoiceLineItem.deleteMany({ where: { invoiceId: id } });
+        await tx.invoiceLineItem.deleteMany({
+          where: { invoiceId: id, invoice: { organizationId: orgId } },
+        });
         return tx.invoice.update({
-          where: { id },
+          where: { id, organizationId: orgId },
           data: {
             status: dto.status,
             dueDate: dueDateValue,
@@ -215,7 +217,7 @@ export class InvoicesService {
       });
     } else {
       updated = await this.prisma.invoice.update({
-        where: { id },
+        where: { id, organizationId: orgId },
         data: {
           status: dto.status,
           dueDate: dueDateValue,
@@ -238,7 +240,7 @@ export class InvoicesService {
     });
     if (!invoice) throw new NotFoundException("Invoice not found");
 
-    await this.prisma.invoice.delete({ where: { id } });
+    await this.prisma.invoice.delete({ where: { id, organizationId: orgId } });
   }
 
   async getStats(orgId: string, projectId?: string) {

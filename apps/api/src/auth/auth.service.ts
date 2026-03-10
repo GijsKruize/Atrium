@@ -1,10 +1,11 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { organization, magicLink } from "better-auth/plugins";
 import { PrismaService } from "../prisma/prisma.service";
 import { MailService } from "../mail/mail.service";
+import { BillingService } from "../billing/billing.service";
 import { DEFAULT_STATUSES, DEFAULT_BRANDING } from "@atrium/shared";
 import { render } from "@react-email/render";
 import { InvitationEmail, MagicLinkEmail, ResetPasswordEmail, VerifyEmail } from "@atrium/email";
@@ -12,11 +13,13 @@ import { InvitationEmail, MagicLinkEmail, ResetPasswordEmail, VerifyEmail } from
 @Injectable()
 export class AuthService {
   public auth: ReturnType<typeof betterAuth>;
+  private readonly logger = new Logger(AuthService.name);
 
   constructor(
     private config: ConfigService,
     private prisma: PrismaService,
     private mail: MailService,
+    private billingService: BillingService,
   ) {
     const webUrl = this.config.get("WEB_URL", "http://localhost:3000");
 
@@ -29,6 +32,27 @@ export class AuthService {
         webUrl,
         this.config.get("BETTER_AUTH_URL", "http://localhost:3001"),
       ],
+      // Firebase Hosting strips all cookies except "__session".
+      // When FIREBASE_HOSTING=true, override the cookie name.
+      // On other hosts (Coolify, VPS, etc.) use Better Auth defaults.
+      ...(this.config.get("FIREBASE_HOSTING") === "true"
+        ? {
+            advanced: {
+              useSecureCookies: false,
+              cookies: {
+                session_token: {
+                  name: "__session",
+                  attributes: {
+                    secure: true,
+                    httpOnly: true,
+                    sameSite: "lax" as const,
+                    path: "/",
+                  },
+                },
+              },
+            },
+          }
+        : {}),
       emailAndPassword: {
         enabled: true,
         minPasswordLength: 8,
@@ -75,6 +99,11 @@ export class AuthService {
           organizationHooks: {
             afterCreateOrganization: async ({ organization }) => {
               await this.seedOrganizationDefaults(organization.id);
+              try {
+                await this.billingService.initializeFreePlan(organization.id);
+              } catch (err) {
+                this.logger.error("Failed to initialize free plan", err);
+              }
             },
           },
         }),

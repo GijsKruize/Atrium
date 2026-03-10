@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // ─── Better Auth tables (managed by Better Auth CLI) ───
@@ -86,6 +87,7 @@ model Organization {
   members        Member[]
   invitations    Invitation[]
   systemSettings SystemSettings?
+  subscription   Subscription?
 
   @@map("organization")
 }
@@ -333,4 +335,53 @@ model ProjectStatus {
   @@unique([organizationId, slug])
   @@index([organizationId])
   @@map("project_status")
+}
+
+// ─── Billing / Subscription tables ───
+
+model SubscriptionPlan {
+  id             String   @id @default(cuid())
+  name           String
+  slug           String   @unique
+  stripePriceId  String?
+  priceMonthly   Int      @default(0)    // cents
+  priceYearly    Int      @default(0)    // cents
+  priceLifetime  Int      @default(0)    // cents
+  maxProjects    Int      @default(-1)   // -1 = unlimited
+  maxStorageMb   Int      @default(-1)
+  maxMembers     Int      @default(-1)
+  maxClients     Int      @default(-1)
+  maxSeats       Int      @default(-1)   // cap on total subscriptions for this plan
+  isRecurring    Boolean  @default(true)
+  features       String[] @default([])
+  description    String?
+  sortOrder      Int      @default(0)
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  subscriptions Subscription[]
+
+  @@map("subscription_plan")
+}
+
+model Subscription {
+  id                     String    @id @default(cuid())
+  organizationId         String    @unique
+  planId                 String
+  stripeCustomerId       String?   @unique
+  stripeSubscriptionId   String?
+  stripePaymentIntentId  String?
+  status                 String    @default("active") // active, past_due, canceled, incomplete
+  currentPeriodStart     DateTime?
+  currentPeriodEnd       DateTime?
+  cancelAtPeriodEnd      Boolean   @default(false)
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  plan         SubscriptionPlan @relation(fields: [planId], references: [id])
+
+  @@index([planId])
+  @@map("subscription")
 }

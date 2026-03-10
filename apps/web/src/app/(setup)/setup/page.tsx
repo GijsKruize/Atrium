@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 import { StepOrgProfile } from "./step-org-profile";
 import { StepEmailConfig } from "./step-email-config";
@@ -8,7 +9,7 @@ import { StepFirstProject } from "./step-first-project";
 import { StepInviteClient } from "./step-invite-client";
 import { StepComplete } from "./step-complete";
 
-const STEPS = [
+const ALL_STEPS = [
   { key: "org", label: "Organization" },
   { key: "email", label: "Email" },
   { key: "project", label: "First Project" },
@@ -16,19 +17,32 @@ const STEPS = [
   { key: "complete", label: "Complete" },
 ] as const;
 
-export default function SetupWizardPage() {
+function SetupWizardContent() {
+  const searchParams = useSearchParams();
   const [currentStep, setCurrentStep] = useState(0);
   const [orgName, setOrgName] = useState("");
   const [loading, setLoading] = useState(true);
+  const [emailPreConfigured, setEmailPreConfigured] = useState(false);
+  const [checkoutBanner, setCheckoutBanner] = useState<"success" | "cancelled" | null>(null);
+
+  useEffect(() => {
+    // Show checkout status banner
+    const checkout = searchParams.get("checkout");
+    if (checkout === "success" || checkout === "cancelled") {
+      setCheckoutBanner(checkout);
+      window.history.replaceState({}, "", "/setup");
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     // Check if setup is already complete
-    apiFetch<{ completed: boolean }>("/setup/status")
+    apiFetch<{ completed: boolean; emailConfigured?: boolean }>("/setup/status")
       .then((res) => {
         if (res.completed) {
           window.location.href = "/dashboard";
           return;
         }
+        if (res.emailConfigured) setEmailPreConfigured(true);
         setLoading(false);
       })
       .catch(() => {
@@ -37,7 +51,7 @@ export default function SetupWizardPage() {
 
     // Load org name for pre-filling
     fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/auth/organization/get-full-organization`,
+      `${process.env.NEXT_PUBLIC_API_URL || ""}/api/auth/organization/get-full-organization`,
       { credentials: "include" },
     )
       .then((res) => res.json())
@@ -55,12 +69,42 @@ export default function SetupWizardPage() {
     );
   }
 
+  const STEPS = emailPreConfigured
+    ? ALL_STEPS.filter((s) => s.key !== "email")
+    : ALL_STEPS;
+
   const goNext = () =>
     setCurrentStep((s) => Math.min(s + 1, STEPS.length - 1));
   const goBack = () => setCurrentStep((s) => Math.max(s - 1, 0));
 
   return (
     <div className="max-w-2xl mx-auto py-8">
+      {/* Checkout status banner */}
+      {checkoutBanner && (
+        <div
+          className={`mb-6 px-4 py-3 rounded-lg flex items-center justify-between text-sm ${
+            checkoutBanner === "success"
+              ? "bg-green-50 text-green-800 border border-green-200"
+              : "bg-yellow-50 text-yellow-800 border border-yellow-200"
+          }`}
+        >
+          <span>
+            {checkoutBanner === "success"
+              ? "Payment successful! Your plan has been upgraded."
+              : "Checkout was cancelled. You\u2019re on the Free plan \u2014 you can upgrade anytime from Settings."}
+          </span>
+          <button
+            onClick={() => setCheckoutBanner(null)}
+            className="ml-4 shrink-0 hover:opacity-70"
+            aria-label="Dismiss"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold">Welcome to Atrium</h1>
@@ -129,20 +173,28 @@ export default function SetupWizardPage() {
 
       {/* Step Content */}
       <div className="border border-[var(--border)] rounded-xl p-6 sm:p-8">
-        {currentStep === 0 && (
+        {STEPS[currentStep]?.key === "org" && (
           <StepOrgProfile orgName={orgName} onNext={goNext} />
         )}
-        {currentStep === 1 && (
+        {STEPS[currentStep]?.key === "email" && (
           <StepEmailConfig onNext={goNext} onBack={goBack} />
         )}
-        {currentStep === 2 && (
+        {STEPS[currentStep]?.key === "project" && (
           <StepFirstProject onNext={goNext} onBack={goBack} />
         )}
-        {currentStep === 3 && (
+        {STEPS[currentStep]?.key === "invite" && (
           <StepInviteClient onNext={goNext} onBack={goBack} />
         )}
-        {currentStep === 4 && <StepComplete onBack={goBack} />}
+        {STEPS[currentStep]?.key === "complete" && <StepComplete onBack={goBack} />}
       </div>
     </div>
+  );
+}
+
+export default function SetupWizardPage() {
+  return (
+    <Suspense>
+      <SetupWizardContent />
+    </Suspense>
   );
 }
