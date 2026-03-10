@@ -12,19 +12,9 @@
   <Privileged>false</Privileged>
   <Support>https://github.com/Vibra-Labs/Atrium/issues</Support>
   <Project>https://github.com/Vibra-Labs/Atrium</Project>
-  <Overview>
-    Atrium is a self-hosted client portal for agencies and freelancers. Share project progress, files, and updates with your clients through a beautiful branded portal.
-
-    Features:
-    - Project management with status tracking
-    - File sharing with S3/MinIO/R2 or local storage
-    - Branded client portal
-    - Email notifications via Resend
-    - Multi-user with role-based access
-
-    REQUIRES a PostgreSQL 16 database. Install the official PostgreSQL container first or point DATABASE_URL to an existing Postgres instance.
-  </Overview>
-  <Category>Productivity: Tools:</Category>
+  <Overview>Atrium is a self-hosted client portal for agencies and freelancers. Share project progress, files, and updates with your clients through a beautiful branded portal.[br][br][b]Features:[/b][br]- Project management with status tracking[br]- File sharing with S3/MinIO/R2 or local storage[br]- Branded client portal[br]- Email notifications via Resend[br]- Multi-user with role-based access[br][br][b][span style='color: #E80000;']Requirements:[/span][/b][br]- PostgreSQL 16 database (install the AtriumDB companion container or point DATABASE_URL to an existing Postgres instance)</Overview>
+  <Category>Productivity: Tools: Network:Web</Category>
+  <Date>2026-03-10</Date>
   <WebUI>http://[IP]:[PORT:8080]</WebUI>
   <TemplateURL>https://raw.githubusercontent.com/Vibra-Labs/Atrium/main/unraid/atrium.xml</TemplateURL>
   <Icon>https://raw.githubusercontent.com/Vibra-Labs/Atrium/main/public/icon.png</Icon>
@@ -32,9 +22,7 @@
   <Requires>PostgreSQL 16 database (install the official postgres container or use an external database)</Requires>
   <DonateText>Support Atrium development</DonateText>
   <DonateLink>https://github.com/Vibra-Labs/Atrium</DonateLink>
-  <Description>
-    Atrium is a self-hosted client portal for agencies and freelancers. Share project progress, files, and updates with your clients through a beautiful branded portal.
-  </Description>
+  <Description>Atrium is a self-hosted client portal for agencies and freelancers. Share project progress, files, and updates with your clients through a beautiful branded portal.</Description>
 
   <!-- Web UI Port -->
   <Config

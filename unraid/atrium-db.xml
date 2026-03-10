@@ -12,16 +12,13 @@
   <Privileged>false</Privileged>
   <Support>https://github.com/Vibra-Labs/Atrium/issues</Support>
   <Project>https://github.com/Vibra-Labs/Atrium</Project>
-  <Overview>
-    PostgreSQL 16 database for Atrium client portal. Install this container first, then install the Atrium container.
-  </Overview>
-  <Category>Productivity: Tools:</Category>
+  <Overview>PostgreSQL 16 database for Atrium client portal. Install this container first, then install the Atrium container.</Overview>
+  <Category>Productivity: Tools: Network:Web</Category>
+  <Date>2026-03-10</Date>
   <TemplateURL>https://raw.githubusercontent.com/Vibra-Labs/Atrium/main/unraid/atrium-db.xml</TemplateURL>
   <Icon>https://raw.githubusercontent.com/Vibra-Labs/Atrium/main/public/icon.png</Icon>
   <ExtraParams>--restart=unless-stopped</ExtraParams>
-  <Description>
-    PostgreSQL 16 database companion container for Atrium. Install this first, then install Atrium.
-  </Description>
+  <Description>PostgreSQL 16 database companion container for Atrium. Install this first, then install Atrium.</Description>
 
   <!-- Postgres Port (optional external access) -->
   <Config
