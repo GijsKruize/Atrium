@@ -1,14 +1,17 @@
-import { ForbiddenException, Injectable, UnauthorizedException } from "@nestjs/common";
+import { Inject, Injectable, UnauthorizedException } from "@nestjs/common";
 import { InjectPinoLogger, PinoLogger } from "nestjs-pino";
 import { PrismaService } from "../prisma/prisma.service";
 import { verifyPassword } from "better-auth/crypto";
 import { DELETED_USER_SENTINEL } from "@atrium/shared";
 import type { DeletionInfo } from "@atrium/shared";
+import type { StorageProvider } from "../files/storage/storage.interface";
+import { STORAGE_PROVIDER } from "../files/storage/storage.interface";
 
 @Injectable()
 export class AccountService {
   constructor(
     private prisma: PrismaService,
+    @Inject(STORAGE_PROVIDER) private storage: StorageProvider,
     @InjectPinoLogger(AccountService.name) private readonly logger: PinoLogger,
   ) {}
 
@@ -58,7 +61,7 @@ export class AccountService {
     });
 
     if (!account?.password) {
-      throw new UnauthorizedException("No password-based account found.");
+      throw new UnauthorizedException("Password verification failed.");
     }
 
     const valid = await verifyPassword({
@@ -67,32 +70,38 @@ export class AccountService {
     });
 
     if (!valid) {
-      throw new UnauthorizedException("Incorrect password.");
+      throw new UnauthorizedException("Password verification failed.");
     }
 
-    const ownerMemberships = await this.prisma.member.findMany({
-      where: { userId, role: "owner" },
-      select: { organizationId: true },
+    const memberships = await this.prisma.member.findMany({
+      where: { userId },
+      select: { organizationId: true, role: true },
     });
+    const allOrgIds = memberships.map((m) => m.organizationId);
+    const ownerOrgIds = memberships.filter((m) => m.role === "owner").map((m) => m.organizationId);
 
-    if (ownerMemberships.length === 0) {
-      throw new ForbiddenException(
-        "Only organization owners can delete their account.",
-      );
+    let orgsToDelete: string[] = [];
+    if (ownerOrgIds.length > 0) {
+      const otherOwnerCounts = await this.prisma.member.groupBy({
+        by: ["organizationId"],
+        where: { organizationId: { in: ownerOrgIds }, role: "owner", userId: { not: userId } },
+        _count: true,
+      });
+      const otherOwnerMap = new Map(otherOwnerCounts.map((g) => [g.organizationId, g._count]));
+      orgsToDelete = ownerOrgIds.filter((id) => !otherOwnerMap.has(id));
     }
+    const deleteSet = new Set(orgsToDelete);
+    const remainingOrgIds = allOrgIds.filter((id) => !deleteSet.has(id));
 
-    const orgIds = ownerMemberships.map((m) => m.organizationId);
-
-    // Batch check: which orgs have other owners?
-    const otherOwnerCounts = await this.prisma.member.groupBy({
-      by: ["organizationId"],
-      where: { organizationId: { in: orgIds }, role: "owner", userId: { not: userId } },
-      _count: true,
-    });
-    const otherOwnerMap = new Map(otherOwnerCounts.map((g) => [g.organizationId, g._count]));
-
-    const orgsToDelete = orgIds.filter((id) => !otherOwnerMap.has(id));
-    const remainingOrgIds = orgIds.filter((id) => otherOwnerMap.has(id));
+    // Collect storage keys before deletion so we can purge blobs after the transaction
+    let storageKeys: string[] = [];
+    if (orgsToDelete.length > 0) {
+      const files = await this.prisma.file.findMany({
+        where: { organizationId: { in: orgsToDelete } },
+        select: { storageKey: true },
+      });
+      storageKeys = files.map((f) => f.storageKey);
+    }
 
     await this.prisma.$transaction(async (tx) => {
       // Delete orgs where user is sole owner.
@@ -110,7 +119,7 @@ export class AccountService {
         await tx.organization.delete({ where: { id: orgId } });
       }
 
-      // For orgs where user is NOT sole owner, anonymize their authored content
+      // Anonymize authored content in orgs the user is leaving (not deleting)
       if (remainingOrgIds.length > 0) {
         await Promise.all([
           tx.projectUpdate.updateMany({
@@ -137,6 +146,17 @@ export class AccountService {
       // Delete the user row (cascades Session, Account, Member, ProjectClient)
       await tx.user.delete({ where: { id: userId } });
     });
+
+    // Purge file blobs from storage (fire-and-forget, best-effort)
+    if (storageKeys.length > 0) {
+      Promise.allSettled(storageKeys.map((key) => this.storage.delete(key)))
+        .then((results) => {
+          const failed = results.filter((r) => r.status === "rejected").length;
+          if (failed > 0) {
+            this.logger.warn({ failed, total: storageKeys.length }, "Some file blobs could not be purged");
+          }
+        });
+    }
 
     this.logger.info({ userId, orgsDeleted: orgsToDelete }, "Account deleted");
   }

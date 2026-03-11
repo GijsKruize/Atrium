@@ -141,7 +141,7 @@ export default function AccountSettingsPage() {
 
   if (loading) return <div>Loading...</div>;
 
-  const isOwner = deletionInfo && deletionInfo.ownedOrganizations.length > 0;
+  const isOwner = deletionInfo !== null && deletionInfo.ownedOrganizations.length > 0;
 
   const tabs: { key: Tab; label: string }[] = [
     { key: "profile", label: "Profile" },
@@ -252,14 +252,14 @@ export default function AccountSettingsPage() {
             </form>
           </div>
 
-          {/* Danger Zone -- only visible to org owners */}
-          {isOwner && (
-            <div className="max-w-md border border-red-300 rounded-lg p-4 space-y-3">
-              <h2 className="text-sm font-medium text-red-600">Danger Zone</h2>
-              <p className="text-sm text-[var(--muted-foreground)]">
-                Permanently delete your account and your organization. All
-                projects, files, invoices, and client access will be removed.
-              </p>
+          {/* Danger Zone */}
+          <div className="max-w-md border border-red-300 rounded-lg p-4 space-y-3">
+            <h2 className="text-sm font-medium text-red-600">Danger Zone</h2>
+            <p className="text-sm text-[var(--muted-foreground)]">
+              {isOwner
+                ? "Permanently delete your account and your organization. All projects, files, invoices, and client access will be removed."
+                : "Permanently delete your account. You will be removed from this organization and lose access to all projects."}
+            </p>
               <div>
                 <label className="text-sm text-[var(--muted-foreground)]">
                   Enter your password to confirm
@@ -279,8 +279,7 @@ export default function AccountSettingsPage() {
               >
                 {deleting ? "Deleting..." : "Delete Account"}
               </button>
-            </div>
-          )}
+          </div>
         </div>
       )}
 
