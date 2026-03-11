@@ -48,7 +48,7 @@ private getFilePath(key: string): string {
 
 ---
 
-### MEDIUM — 5 Findings
+### MEDIUM — 6 Findings
 
 #### M1: Unbounded In-Memory Session Cache
 
@@ -106,7 +106,19 @@ Default PostgreSQL password (`atrium`) and a placeholder `BETTER_AUTH_SECRET` va
 
 ---
 
-### LOW — 6 Findings
+### LOW — 7 Findings
+
+#### M6: Updates Endpoint Lacks File Extension Blocking
+
+**File:** `apps/api/src/updates/updates.service.ts:51-54`
+
+The project updates attachment upload validates file size (10MB) but does **not** apply the `BLOCKED_EXTENSIONS` check that exists in `files.service.ts`. An attacker with `owner`/`admin` role could upload executable files (`.exe`, `.bat`, `.ps1`, etc.) as update attachments.
+
+**Recommendation:** Apply the same `BLOCKED_EXTENSIONS` check from `files.service.ts` to the updates attachment upload path.
+
+---
+
+### LOW — 7 Findings
 
 #### L1: No File Content-Type Validation (Magic Bytes)
 
@@ -152,7 +164,15 @@ The Content Security Policy allows `'unsafe-inline'` for styles. This is common 
 
 **Recommendation:** Consider using nonces or hashes for inline styles if feasible.
 
-#### L6: No `.dockerignore` for Sensitive Files
+#### L6: Health Endpoint Missing `@Public()` Decorator
+
+**File:** `apps/api/src/health.controller.ts:5-6`
+
+The health controller has `@SkipThrottle()` but no `@Public()` decorator. It works because the `AuthGuard` is not applied globally (it's per-controller), but this is inconsistent with other public endpoints and could break if the guard application strategy changes.
+
+**Recommendation:** Add `@Public()` decorator for explicitness.
+
+#### L7: No `.dockerignore` for Sensitive Files
 
 **File:** `docker/api.Dockerfile:17`
 
@@ -193,11 +213,13 @@ The `COPY . .` in the build stage copies the entire project context. Verify a `.
 ## Recommendations Summary (Priority Order)
 
 1. **[HIGH]** Add path traversal check in `LocalStorage.getFilePath()`
-2. **[MEDIUM]** Bound session cache size with LRU eviction
-3. **[MEDIUM]** Bind CSRF tokens to sessions cryptographically
-4. **[MEDIUM]** Restrict `trust proxy` to specific depth
-5. **[MEDIUM]** Rate-limit health endpoint instead of skipping throttle
-6. **[MEDIUM]** Parameterize Docker Compose credentials via env vars
-7. **[LOW]** Add magic byte validation for file uploads
-8. **[LOW]** Derive logo extension from MIME type
-9. **[LOW]** Evaluate CSP nonce-based inline styles
+2. **[MEDIUM]** Apply `BLOCKED_EXTENSIONS` check to updates attachment uploads
+3. **[MEDIUM]** Bound session cache size with LRU eviction
+4. **[MEDIUM]** Bind CSRF tokens to sessions cryptographically
+5. **[MEDIUM]** Restrict `trust proxy` to specific depth
+6. **[MEDIUM]** Rate-limit health endpoint instead of skipping throttle
+7. **[MEDIUM]** Parameterize Docker Compose credentials via env vars
+8. **[LOW]** Add magic byte validation for file uploads
+9. **[LOW]** Derive logo extension from MIME type
+10. **[LOW]** Add `@Public()` to health endpoint for consistency
+11. **[LOW]** Evaluate CSP nonce-based inline styles
