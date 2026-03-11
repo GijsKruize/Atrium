@@ -11,7 +11,7 @@ All notable changes to Atrium will be documented in this file.
 - Password re-authentication required before deletion
 - Type-to-confirm dialog requiring `DELETE <org name>`
 - `GET /api/account/deletion-info` preflight endpoint returns org ownership context
-- Non-owners cannot see or access the delete functionality
+- Clients (non-owners) can delete their own account from portal settings
 - E2E tests for deletion flow, credential invalidation, and non-owner visibility
 
 #### Supabase Row Level Security
@@ -33,6 +33,14 @@ All notable changes to Atrium will be documented in this file.
 - Template repo at `Vibra-Labs/unraid-templates` linked as git submodule
 - PR submitted to `selfhosters/unRAID-CA-templates` for CA listing
 
+#### Invitations
+- Accept-invite auto-login when a user signs up with an already-existing account
+- Accept-invite sets active organization before redirect
+
+#### UX
+- Portal `/portal` redirects to `/portal/projects`
+- Danger zone section visible to all dashboard users (owners and non-owners)
+
 ### Security
 - Comprehensive security audit with findings documented in `SECURITY_AUDIT.md`
 - DTO validation added for project and task inputs (`@IsDateString`, `@MaxLength`)
@@ -41,10 +49,13 @@ All notable changes to Atrium will be documented in this file.
 - Update attachment size validated against system settings before storage
 - Caddyfile hardened with `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy` headers
 - PostgreSQL port no longer exposed to host in production `docker-compose.yml`
+- Generic password verification error message to prevent user enumeration
 - `DELETED_USER_SENTINEL` constant in shared package for anonymized user references
 
 ### Changed
 - Deploy workflow now only pushes to Docker Hub (removed Google Cloud Run and Firebase Hosting steps)
+- Shared `setActiveOrgAndRedirect` helper replaces duplicated org-switch-and-redirect logic
+- Organization deletion now purges file blobs from storage provider (not just DB records)
 
 ### Fixed
 - Dockerfile missing `ca-certificates` package broke PostgreSQL apt repo setup
