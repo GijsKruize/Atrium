@@ -1,21 +1,7 @@
 import { test, expect } from "@playwright/test";
-import { readFileSync } from "fs";
-import { resolve } from "path";
+import { getCsrfToken } from "./helpers";
 
 const API = "http://localhost:3001/api";
-
-// ---------------------------------------------------------------------------
-// Helper: read the CSRF token from the stored auth state.
-// The global-setup writes the session + csrf-token cookie to this file.
-// ---------------------------------------------------------------------------
-function getCsrfToken(): string {
-  const authPath = resolve(__dirname, "../e2e/.auth/user.json");
-  const state = JSON.parse(readFileSync(authPath, "utf-8"));
-  const cookie = state.cookies?.find(
-    (c: { name: string }) => c.name === "csrf-token",
-  );
-  return cookie?.value || "";
-}
 
 // ---------------------------------------------------------------------------
 // Helper: create a minimal invoice via the API and return its id.
