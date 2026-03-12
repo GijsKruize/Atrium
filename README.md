@@ -96,14 +96,7 @@ The unified image (`vibralabs/atrium`) bundles the API, web app, and a Caddy rev
 
 ## Roadmap
 
-- [x] Billing & subscriptions (Stripe)
-- [x] Setup wizard for new organizations
-- [x] Email notifications (Resend + SMTP)
-- [x] Docker Hub image (`vibralabs/atrium`)
-- [x] Unraid Community App template
-- [ ] Contract signatures
-- [ ] Client-facing invoice payments
-- [ ] Webhooks / Zapier integration
+SAML/SSO, contracts & e-signatures, client approval workflows, calendar view, and more. See the full [Roadmap](docs/roadmap.md).
 
 ## Contributing
 
