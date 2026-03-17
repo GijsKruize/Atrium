@@ -420,6 +420,7 @@ model DocumentResponse {
   documentId String
   userId     String
   action     String   // "accepted", "declined", "acknowledged"
+  reason     String?
   ipAddress  String?
   userAgent  String?
   createdAt  DateTime @default(now())

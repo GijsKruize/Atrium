@@ -118,6 +118,7 @@ export class DocumentsController {
       dto.action,
       req.ip,
       String(req.headers["user-agent"] || ""),
+      dto.reason,
     );
   }
 

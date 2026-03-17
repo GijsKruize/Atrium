@@ -213,7 +213,7 @@ test.describe("Documents", () => {
       if (await projectLink.isVisible({ timeout: 5000 }).catch(() => false)) {
         await projectLink.click();
         await page.getByRole("button", { name: /^files$/i }).click();
-        await expect(page.getByText(/upload document/i)).toBeVisible({ timeout: 5000 });
+        await expect(page.getByRole("button", { name: /upload/i })).toBeVisible({ timeout: 5000 });
       }
     });
   });

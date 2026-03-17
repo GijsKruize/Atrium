@@ -142,6 +142,7 @@ export class DocumentsService {
     action: string,
     ipAddress?: string,
     userAgent?: string,
+    reason?: string,
   ) {
     const doc = await this.prisma.document.findFirst({
       where: { id, organizationId: orgId },
@@ -172,11 +173,13 @@ export class DocumentsService {
         documentId: id,
         userId,
         action,
+        reason: reason || null,
         ipAddress,
         userAgent,
       },
       update: {
         action,
+        reason: reason || null,
         ipAddress,
         userAgent,
       },

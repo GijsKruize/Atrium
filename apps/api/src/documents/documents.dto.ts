@@ -2,6 +2,7 @@ import {
   IsString,
   IsNotEmpty,
   IsIn,
+  IsOptional,
   MaxLength,
 } from "class-validator";
 
@@ -24,4 +25,9 @@ export class RespondDocumentDto {
   @IsString()
   @IsIn(["accepted", "declined", "acknowledged"])
   action!: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  reason?: string;
 }
