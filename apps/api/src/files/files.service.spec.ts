@@ -10,6 +10,7 @@ import { Readable } from "stream";
 import type { PrismaService } from "../prisma/prisma.service";
 import type { ConfigService } from "@nestjs/config";
 import type { StorageProvider } from "./storage/storage.provider";
+import type { NotificationsService } from "../notifications/notifications.service";
 import type { SettingsService } from "../settings/settings.service";
 
 interface PrismaArgs {
@@ -54,6 +55,12 @@ const mockPrisma = {
   projectClient: {
     findFirst: mock(() => Promise.resolve(null)),
   },
+  invoice: {
+    findFirst: mock(() => Promise.resolve(null)),
+  },
+  document: {
+    findFirst: mock(() => Promise.resolve(null)),
+  },
   $transaction: mock((fn: (prisma: typeof mockPrisma) => unknown) => fn(mockPrisma)),
 };
 
@@ -69,6 +76,10 @@ const mockSettingsService = {
   getEffectiveMaxFileSize: mock(() => Promise.resolve(50)),
 };
 
+const mockNotifications = {
+  notifyDocumentUploaded: mock(() => Promise.resolve()),
+};
+
 describe("FilesService", () => {
   let service: FilesService;
 
@@ -78,6 +89,7 @@ describe("FilesService", () => {
       mockConfig as unknown as ConfigService,
       mockSettingsService as unknown as SettingsService,
       mockStorage as unknown as StorageProvider,
+      mockNotifications as unknown as NotificationsService,
     );
     // Reset the max file size to the default between tests
     mockSettingsService.getEffectiveMaxFileSize.mockImplementation(() =>
@@ -304,17 +316,10 @@ describe("FilesService", () => {
       organizationId: "org-1",
     };
     mockPrisma.file.findFirst.mockReturnValue(Promise.resolve(file));
-    // $transaction executes the callback synchronously in this mock
-    mockPrisma.$transaction.mockImplementation(async (fn: (tx: Record<string, unknown>) => unknown) => {
-      return fn({
-        file: {
-          findFirst: mock(() => Promise.resolve(file)),
-          deleteMany: mock(() => Promise.resolve({ count: 1 })),
-        },
-      });
-    });
+    mockPrisma.invoice.findFirst.mockReturnValue(Promise.resolve(null));
 
     await service.remove("file-1", "org-1");
+    expect(mockPrisma.file.delete).toHaveBeenCalled();
     expect(mockStorage.delete).toHaveBeenCalled();
   });
 
