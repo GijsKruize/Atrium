@@ -264,7 +264,7 @@ export function FilesSection({
                     : "border-[var(--border)]"
               }`}
             >
-              <div className="flex items-center justify-between">
+              <div className="flex items-start justify-between gap-2 flex-wrap sm:flex-nowrap">
                 <div className="flex items-center gap-3 min-w-0">
                   {isDoc && (
                     <FileText
@@ -308,7 +308,7 @@ export function FilesSection({
                     </p>
                   </div>
                 </div>
-                <div className="flex gap-2 shrink-0">
+                <div className="flex flex-wrap gap-2 shrink-0">
                   {/* Reset to pending button for rejected/accepted docs */}
                   {isDoc && !isArchived && (file.documentStatus === "rejected" || file.documentStatus === "accepted") && (
                     <button

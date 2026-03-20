@@ -306,13 +306,13 @@ export function InvoicesSection({
           Invoices{invoices.length > 0 && ` (${invoices.length})`}
         </h2>
         {!isArchived && (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => setShowUpload(true)}
               className="flex items-center gap-2 px-3 py-1.5 border border-[var(--border)] rounded-lg text-sm hover:bg-[var(--muted)]"
             >
               <Upload size={14} />
-              Upload Invoice
+              Upload
             </button>
             <button
               onClick={() => setShowCreate(true)}
@@ -373,46 +373,52 @@ export function InvoicesSection({
               <label className="text-sm text-[var(--muted-foreground)] mb-2 block">Line Items</label>
               <div className="space-y-2">
                 {newLineItems.map((item, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={item.description}
-                      onChange={(e) => updateNewLineItem(index, "description", e.target.value)}
-                      placeholder="Description"
-                      className="flex-1 px-3 py-1.5 border border-[var(--border)] rounded-lg bg-[var(--background)] text-sm"
-                    />
-                    <input
-                      type="number"
-                      value={item.quantity}
-                      onChange={(e) => updateNewLineItem(index, "quantity", parseInt(e.target.value) || 0)}
-                      min={1}
-                      className="w-20 px-3 py-1.5 border border-[var(--border)] rounded-lg bg-[var(--background)] text-sm"
-                    />
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[var(--muted-foreground)]">$</span>
+                  <div key={index} className="space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={item.description}
+                        onChange={(e) => updateNewLineItem(index, "description", e.target.value)}
+                        placeholder="Description"
+                        className="flex-1 min-w-0 px-3 py-1.5 border border-[var(--border)] rounded-lg bg-[var(--background)] text-sm"
+                      />
+                      {newLineItems.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => setNewLineItems((prev) => prev.filter((_, i) => i !== index))}
+                          className="p-1.5 text-[var(--muted-foreground)] hover:text-red-500 shrink-0"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
                       <input
                         type="number"
-                        value={item.unitPrice / 100 || ""}
-                        onChange={(e) =>
-                          updateNewLineItem(index, "unitPrice", Math.round(parseFloat(e.target.value || "0") * 100))
-                        }
-                        step="0.01"
-                        min={0}
-                        className="w-28 pl-7 pr-3 py-1.5 border border-[var(--border)] rounded-lg bg-[var(--background)] text-sm"
+                        value={item.quantity}
+                        onChange={(e) => updateNewLineItem(index, "quantity", parseInt(e.target.value) || 0)}
+                        min={1}
+                        placeholder="Qty"
+                        className="w-16 px-2 py-1.5 border border-[var(--border)] rounded-lg bg-[var(--background)] text-sm"
                       />
+                      <div className="relative flex-1 min-w-0">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[var(--muted-foreground)]">$</span>
+                        <input
+                          type="number"
+                          value={item.unitPrice / 100 || ""}
+                          onChange={(e) =>
+                            updateNewLineItem(index, "unitPrice", Math.round(parseFloat(e.target.value || "0") * 100))
+                          }
+                          step="0.01"
+                          min={0}
+                          placeholder="0.00"
+                          className="w-full pl-7 pr-3 py-1.5 border border-[var(--border)] rounded-lg bg-[var(--background)] text-sm"
+                        />
+                      </div>
+                      <span className="text-sm font-medium shrink-0">
+                        {formatCurrency(item.quantity * item.unitPrice)}
+                      </span>
                     </div>
-                    <span className="text-sm font-medium w-24 text-right">
-                      {formatCurrency(item.quantity * item.unitPrice)}
-                    </span>
-                    {newLineItems.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => setNewLineItems((prev) => prev.filter((_, i) => i !== index))}
-                        className="p-1.5 text-[var(--muted-foreground)] hover:text-red-500"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    )}
                   </div>
                 ))}
               </div>
@@ -564,18 +570,18 @@ export function InvoicesSection({
                 {/* Row header */}
                 <button
                   onClick={() => setExpandedId(isExpanded ? null : inv.id)}
-                  className="flex items-center justify-between w-full p-3 text-left hover:bg-[var(--muted)] transition-colors rounded-lg"
+                  className="flex items-start justify-between w-full p-3 text-left hover:bg-[var(--muted)] transition-colors rounded-lg gap-2"
                 >
-                  <div className="flex items-center gap-4">
+                  <div className="flex flex-col gap-0.5 min-w-0">
                     <span className="text-sm font-medium">{inv.invoiceNumber}</span>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <span className="text-sm font-medium">{formatCurrency(total)}</span>
                     {inv.dueDate && (
                       <span className="text-xs text-[var(--muted-foreground)]">
                         Due {new Date(inv.dueDate).toLocaleDateString()}
                       </span>
                     )}
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-sm font-medium">{formatCurrency(total)}</span>
                     <span
                       className="text-xs px-2 py-1 rounded-full font-medium"
                       style={{ backgroundColor: colors.bg, color: colors.text }}
@@ -589,7 +595,7 @@ export function InvoicesSection({
                 {isExpanded && (
                   <div className="px-3 pb-3 space-y-3 border-t border-[var(--border)]">
                     {/* Actions bar */}
-                    <div className="flex items-center gap-2 pt-3">
+                    <div className="flex flex-wrap items-center gap-2 pt-3">
                       {isDraft && !isArchived && (
                         <button
                           onClick={() => handleStatusChange(inv.id, "sent")}
@@ -646,46 +652,52 @@ export function InvoicesSection({
                         </div>
                         <div className="space-y-2">
                           {editItems.map((item, index) => (
-                            <div key={index} className="flex items-center gap-2">
-                              <input
-                                type="text"
-                                value={item.description}
-                                onChange={(e) => updateEditItem(index, "description", e.target.value)}
-                                placeholder="Description"
-                                className="flex-1 px-3 py-1.5 border border-[var(--border)] rounded-lg bg-[var(--background)] text-sm"
-                              />
-                              <input
-                                type="number"
-                                value={item.quantity}
-                                onChange={(e) => updateEditItem(index, "quantity", parseInt(e.target.value) || 0)}
-                                min={1}
-                                className="w-20 px-3 py-1.5 border border-[var(--border)] rounded-lg bg-[var(--background)] text-sm"
-                              />
-                              <div className="relative">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[var(--muted-foreground)]">$</span>
+                            <div key={index} className="space-y-1.5">
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="text"
+                                  value={item.description}
+                                  onChange={(e) => updateEditItem(index, "description", e.target.value)}
+                                  placeholder="Description"
+                                  className="flex-1 min-w-0 px-3 py-1.5 border border-[var(--border)] rounded-lg bg-[var(--background)] text-sm"
+                                />
+                                {editItems.length > 1 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditItems((prev) => prev.filter((_, i) => i !== index))}
+                                    className="p-1.5 text-[var(--muted-foreground)] hover:text-red-500 shrink-0"
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2">
                                 <input
                                   type="number"
-                                  value={item.unitPrice / 100 || ""}
-                                  onChange={(e) =>
-                                    updateEditItem(index, "unitPrice", Math.round(parseFloat(e.target.value || "0") * 100))
-                                  }
-                                  step="0.01"
-                                  min={0}
-                                  className="w-28 pl-7 pr-3 py-1.5 border border-[var(--border)] rounded-lg bg-[var(--background)] text-sm"
+                                  value={item.quantity}
+                                  onChange={(e) => updateEditItem(index, "quantity", parseInt(e.target.value) || 0)}
+                                  min={1}
+                                  placeholder="Qty"
+                                  className="w-16 px-2 py-1.5 border border-[var(--border)] rounded-lg bg-[var(--background)] text-sm"
                                 />
+                                <div className="relative flex-1 min-w-0">
+                                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[var(--muted-foreground)]">$</span>
+                                  <input
+                                    type="number"
+                                    value={item.unitPrice / 100 || ""}
+                                    onChange={(e) =>
+                                      updateEditItem(index, "unitPrice", Math.round(parseFloat(e.target.value || "0") * 100))
+                                    }
+                                    step="0.01"
+                                    min={0}
+                                    placeholder="0.00"
+                                    className="w-full pl-7 pr-3 py-1.5 border border-[var(--border)] rounded-lg bg-[var(--background)] text-sm"
+                                  />
+                                </div>
+                                <span className="text-sm font-medium shrink-0">
+                                  {formatCurrency(item.quantity * item.unitPrice)}
+                                </span>
                               </div>
-                              <span className="text-sm font-medium w-24 text-right">
-                                {formatCurrency(item.quantity * item.unitPrice)}
-                              </span>
-                              {editItems.length > 1 && (
-                                <button
-                                  type="button"
-                                  onClick={() => setEditItems((prev) => prev.filter((_, i) => i !== index))}
-                                  className="p-1 text-[var(--muted-foreground)] hover:text-red-500"
-                                >
-                                  <Trash2 size={12} />
-                                </button>
-                              )}
                             </div>
                           ))}
                           <button
@@ -748,23 +760,23 @@ export function InvoicesSection({
                             </div>
                           </div>
                         ) : (
-                          <div className="border border-[var(--border)] rounded-lg overflow-hidden">
-                            <table className="w-full text-sm">
+                          <div className="border border-[var(--border)] rounded-lg overflow-x-auto">
+                            <table className="w-full text-sm min-w-[320px]">
                               <thead>
                                 <tr className="bg-[var(--muted)]">
-                                  <th className="text-left px-4 py-2 font-medium">Description</th>
-                                  <th className="text-right px-4 py-2 font-medium">Qty</th>
-                                  <th className="text-right px-4 py-2 font-medium">Unit Price</th>
-                                  <th className="text-right px-4 py-2 font-medium">Total</th>
+                                  <th className="text-left px-3 py-2 font-medium">Description</th>
+                                  <th className="text-right px-3 py-2 font-medium">Qty</th>
+                                  <th className="text-right px-3 py-2 font-medium">Price</th>
+                                  <th className="text-right px-3 py-2 font-medium">Total</th>
                                 </tr>
                               </thead>
                               <tbody>
                                 {inv.lineItems.map((li, idx) => (
                                   <tr key={li.id || idx} className="border-t border-[var(--border)]">
-                                    <td className="px-4 py-2">{li.description}</td>
-                                    <td className="px-4 py-2 text-right">{li.quantity}</td>
-                                    <td className="px-4 py-2 text-right">{formatCurrency(li.unitPrice)}</td>
-                                    <td className="px-4 py-2 text-right font-medium">
+                                    <td className="px-3 py-2">{li.description}</td>
+                                    <td className="px-3 py-2 text-right">{li.quantity}</td>
+                                    <td className="px-3 py-2 text-right">{formatCurrency(li.unitPrice)}</td>
+                                    <td className="px-3 py-2 text-right font-medium">
                                       {formatCurrency(li.quantity * li.unitPrice)}
                                     </td>
                                   </tr>
@@ -772,8 +784,8 @@ export function InvoicesSection({
                               </tbody>
                               <tfoot>
                                 <tr className="border-t border-[var(--border)] bg-[var(--muted)]">
-                                  <td colSpan={3} className="px-4 py-2 text-right font-medium">Total</td>
-                                  <td className="px-4 py-2 text-right font-bold">{formatCurrency(total)}</td>
+                                  <td colSpan={3} className="px-3 py-2 text-right font-medium">Total</td>
+                                  <td className="px-3 py-2 text-right font-bold">{formatCurrency(total)}</td>
                                 </tr>
                               </tfoot>
                             </table>

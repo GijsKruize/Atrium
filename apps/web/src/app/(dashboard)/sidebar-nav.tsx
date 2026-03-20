@@ -18,7 +18,7 @@ const navItems = [
   { href: "/dashboard/settings/account", label: "Account", icon: UserCog },
 ];
 
-export function SidebarNav() {
+export function SidebarNav({ onNavigate }: { onNavigate?: () => void } = {}) {
   const pathname = usePathname();
 
   return (
@@ -31,6 +31,7 @@ export function SidebarNav() {
           <Link
             key={href}
             href={href}
+            onClick={onNavigate}
             className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
               isActive
                 ? "bg-[var(--muted)] font-medium"

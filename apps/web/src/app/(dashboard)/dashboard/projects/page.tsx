@@ -152,7 +152,7 @@ export default function ProjectsPage() {
 
       {/* Search, Filter, Archive */}
       <div className="flex flex-wrap items-center gap-3 mb-4">
-        <div className="relative flex-1 min-w-[200px] max-w-sm">
+        <div className="relative flex-1 min-w-0 w-full sm:w-auto sm:max-w-sm">
           <Search
             size={16}
             className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)]"
@@ -169,7 +169,7 @@ export default function ProjectsPage() {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-3 py-2 border border-[var(--border)] rounded-lg bg-[var(--background)] text-sm"
+          className="w-full sm:w-auto px-3 py-2 border border-[var(--border)] rounded-lg bg-[var(--background)] text-sm"
         >
           <option value="">All statuses</option>
           {statuses.map((s) => (
@@ -204,9 +204,9 @@ export default function ProjectsPage() {
                 href={`/dashboard/projects/${project.id}`}
                 className="block p-4 border border-[var(--border)] rounded-lg hover:bg-[var(--muted)] transition-colors"
               >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-medium">{project.name}</h3>
                       {project.archivedAt && (
                         <span className="flex items-center gap-1 text-xs px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full">
@@ -221,7 +221,7 @@ export default function ProjectsPage() {
                       </p>
                     )}
                   </div>
-                  <span className="text-xs px-2 py-1 bg-[var(--muted)] rounded-full">
+                  <span className="text-xs px-2 py-1 bg-[var(--muted)] rounded-full shrink-0 self-start">
                     {project.status.replace(/_/g, " ")}
                   </span>
                 </div>

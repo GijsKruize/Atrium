@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { SignOutButton } from "./sign-out-button";
 import { SidebarNav } from "./sidebar-nav";
 import { EmailVerificationBanner } from "./email-verification-banner";
+import { MobileNav } from "./mobile-nav";
 
 const API_URL = process.env.API_URL || "http://localhost:3001";
 
@@ -120,7 +121,8 @@ export default async function DashboardLayout({
 
   return (
     <div className="min-h-screen flex">
-      <aside className="w-64 border-r border-[var(--border)] p-4 flex flex-col">
+      {/* Desktop sidebar - hidden on mobile */}
+      <aside className="hidden md:flex w-64 border-r border-[var(--border)] p-4 flex-col">
         <div className="flex items-center gap-2.5 mb-6">
           {!branding?.hideLogo && (
             /* eslint-disable-next-line @next/next/no-img-element */
@@ -139,7 +141,11 @@ export default async function DashboardLayout({
           <SignOutButton />
         </div>
       </aside>
-      <main className="flex-1 p-8">
+
+      {/* Mobile nav */}
+      <MobileNav logoSrc={logoSrc} orgName={orgName} hideLogo={branding?.hideLogo} />
+
+      <main className="flex-1 p-4 sm:p-6 lg:p-8 max-md:pt-[4.5rem]">
         {!session.user?.emailVerified && (
           <EmailVerificationBanner email={session.user?.email} />
         )}

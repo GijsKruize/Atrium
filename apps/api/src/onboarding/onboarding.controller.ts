@@ -61,6 +61,10 @@ export class OnboardingController {
 
     if (!signupRes.ok) {
       const err: Record<string, unknown> = await signupRes.json().catch(() => ({}));
+      this.logger.error(
+        { status: signupRes.status, error: err, email: body.email },
+        "Better Auth signup failed",
+      );
       throw new BadRequestException(
         (err.message as string) || "Signup failed",
       );

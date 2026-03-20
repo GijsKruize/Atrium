@@ -122,7 +122,7 @@ export function NotesSection({
               {!isArchived && (
                 <button
                   onClick={() => handleDelete(note.id)}
-                  className="flex items-center gap-1 text-xs text-red-500 hover:underline"
+                  className="flex items-center gap-1 px-2 py-1 text-xs text-red-500 hover:underline"
                 >
                   <Trash2 size={12} />
                   Delete
