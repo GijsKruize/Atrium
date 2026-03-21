@@ -62,7 +62,7 @@ export class OnboardingController {
     if (!signupRes.ok) {
       const err: Record<string, unknown> = await signupRes.json().catch(() => ({}));
       this.logger.error(
-        { status: signupRes.status, error: err, email: body.email },
+        { status: signupRes.status, error: err },
         "Better Auth signup failed",
       );
       throw new BadRequestException(
@@ -175,7 +175,7 @@ export class OnboardingController {
       )
       .catch((err) => {
         this.logger.warn(
-          { err, email: body.email },
+          { err },
           "Failed to send welcome email",
         );
       });

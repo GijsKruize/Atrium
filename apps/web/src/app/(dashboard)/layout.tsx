@@ -145,6 +145,7 @@ export default async function DashboardLayout({
       {/* Mobile nav */}
       <MobileNav logoSrc={logoSrc} orgName={orgName} hideLogo={branding?.hideLogo} />
 
+      {/* pt-[4.5rem] on mobile = h-14 navbar (3.5rem) + 1rem spacing */}
       <main className="flex-1 p-4 sm:p-6 lg:p-8 max-md:pt-[4.5rem]">
         {!session.user?.emailVerified && (
           <EmailVerificationBanner email={session.user?.email} />

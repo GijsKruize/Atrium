@@ -58,16 +58,12 @@ export class AuthService {
         minPasswordLength: 8,
         maxPasswordLength: 128,
         sendResetPassword: async ({ user, url }) => {
-          try {
-            const html = await render(ResetPasswordEmail({ url }));
-            await this.mail.send(
-              user.email,
-              "Reset your password",
-              html,
-            );
-          } catch (err) {
-            this.logger.error(`Failed to send reset password email to ${user.email}`, err);
-          }
+          const html = await render(ResetPasswordEmail({ url }));
+          await this.mail.send(
+            user.email,
+            "Reset your password",
+            html,
+          );
         },
       },
       emailVerification: {
@@ -75,16 +71,12 @@ export class AuthService {
         autoSignInAfterVerification: true,
         callbackURL: `${webUrl}/verify-email?verified=true`,
         sendVerificationEmail: async ({ user, url }) => {
-          try {
-            const html = await render(VerifyEmail({ url }));
-            await this.mail.send(
-              user.email,
-              "Verify your email address",
-              html,
-            );
-          } catch (err) {
-            this.logger.error(`Failed to send verification email to ${user.email}`, err);
-          }
+          const html = await render(VerifyEmail({ url }));
+          await this.mail.send(
+            user.email,
+            "Verify your email address",
+            html,
+          );
         },
       },
       plugins: [
