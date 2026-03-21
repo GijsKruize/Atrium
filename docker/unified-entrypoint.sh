@@ -41,8 +41,18 @@ cd /app
 if [ "${SKIP_DB_PUSH}" = "true" ]; then
   echo "Skipping database schema push (SKIP_DB_PUSH=true)"
 else
-  echo "Syncing database schema..."
   MIGRATION_URL="${DIRECT_URL:-$DATABASE_URL}"
+
+  # First, create new tables without dropping old columns
+  echo "Creating new tables..."
+  DATABASE_URL="$MIGRATION_URL" ./packages/database/node_modules/.bin/prisma db push --schema=./packages/database/prisma/schema.prisma --skip-generate 2>/dev/null || true
+
+  # Migrate legacy document data from file table to document table
+  echo "Running data migrations..."
+  DATABASE_URL="$MIGRATION_URL" bun run ./packages/database/scripts/migrate-file-documents.ts || true
+
+  # Now push schema with accept-data-loss to drop old columns
+  echo "Syncing database schema..."
   DATABASE_URL="$MIGRATION_URL" ./packages/database/node_modules/.bin/prisma db push --schema=./packages/database/prisma/schema.prisma --skip-generate --accept-data-loss
   echo "Database schema synced."
 
