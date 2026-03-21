@@ -692,14 +692,14 @@ export function FilesSection({
       <div className="space-y-2">
         {sortedFiles.map((file) => (
           <div key={file.id} className="p-3 border border-[var(--border)] rounded-lg">
-            <div className="flex items-center justify-between">
+            <div className="flex items-start justify-between gap-2 flex-wrap sm:flex-nowrap">
               <div className="min-w-0">
                 <p className="text-sm font-medium truncate">{file.filename}</p>
                 <p className="text-xs text-[var(--muted-foreground)]">
                   {formatBytes(file.sizeBytes)} &middot; {formatRelativeTime(file.createdAt)}
                 </p>
               </div>
-              <div className="flex gap-2 shrink-0">
+              <div className="flex flex-wrap gap-2 shrink-0">
                 <button onClick={() => handleFileDownload(file.id, file.filename)} className="flex items-center gap-1.5 text-sm text-[var(--primary)] hover:underline">
                   <Download size={14} /> Download
                 </button>

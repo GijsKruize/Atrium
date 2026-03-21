@@ -369,7 +369,7 @@ export default function PortalProjectDetailPage() {
           {statuses.map((s, i) => (
             <div
               key={s.id}
-              className="flex-1 text-center py-1.5 text-[10px] font-medium rounded"
+              className="flex-1 text-center py-1.5 text-[10px] font-medium rounded overflow-hidden text-ellipsis whitespace-nowrap px-0.5"
               style={{
                 backgroundColor: i <= currentIndex ? s.color : "var(--muted)",
                 color: i <= currentIndex ? "#fff" : "var(--muted-foreground)",
@@ -453,30 +453,33 @@ export default function PortalProjectDetailPage() {
           );
         })()}
 
-        <div className="flex border-b border-[var(--border)] mb-6">
-          {tabs.map((tab) => {
-            const pendingCount = tab.id === "files"
-              ? documents.filter((d) => d.status === "pending" && d.responses.length === 0).length
-              : 0;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors flex items-center gap-1.5 ${
-                  activeTab === tab.id
-                    ? "border-[var(--primary)] text-[var(--primary)]"
-                    : "border-transparent text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:border-[var(--border)]"
-                }`}
-              >
-                {tab.label}
-                {pendingCount > 0 && (
-                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-500 text-white text-[10px] font-bold">
-                    {pendingCount}
-                  </span>
-                )}
-              </button>
-            );
-          })}
+        <div className="relative mb-6">
+          <div className="flex overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            {tabs.map((tab) => {
+              const pendingCount = tab.id === "files"
+                ? documents.filter((d) => d.status === "pending" && d.responses.length === 0).length
+                : 0;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`px-3 sm:px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-colors flex items-center gap-1.5 relative after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:rounded-full ${
+                    activeTab === tab.id
+                      ? "text-[var(--primary)] after:bg-[var(--primary)]"
+                      : "text-[var(--muted-foreground)] hover:text-[var(--foreground)] after:bg-transparent"
+                  }`}
+                >
+                  {tab.label}
+                  {pendingCount > 0 && (
+                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-500 text-white text-[10px] font-bold">
+                      {pendingCount}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+          <div className="absolute bottom-0 left-0 right-0 h-px bg-[var(--border)] -z-10" />
         </div>
 
         {/* Updates Tab */}
@@ -585,10 +588,10 @@ export default function PortalProjectDetailPage() {
                             ? handleDownload(entry.fileId, entry.attachmentName || "download")
                             : window.open(attachmentSrc, "_blank")
                         }
-                        className="mt-3 flex items-center gap-2 px-3 py-2 border border-[var(--border)] rounded-lg text-sm hover:bg-[var(--muted)] transition-colors w-fit"
+                        className="mt-3 flex items-center gap-2 px-3 py-2 border border-[var(--border)] rounded-lg text-sm hover:bg-[var(--muted)] transition-colors w-full sm:w-fit"
                       >
                         <FileText size={16} className="text-[var(--muted-foreground)] shrink-0" />
-                        <span className="truncate max-w-[200px]">{entry.attachmentName || "Download"}</span>
+                        <span className="truncate min-w-0 flex-1">{entry.attachmentName || "Download"}</span>
                         <Download size={14} className="text-[var(--muted-foreground)] shrink-0" />
                       </button>
                     )}
@@ -764,7 +767,7 @@ export default function PortalProjectDetailPage() {
                     key={file.id}
                     className="p-3 border border-[var(--border)] rounded-lg"
                   >
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-start justify-between gap-2 flex-wrap sm:flex-nowrap">
                       <div className="min-w-0">
                         <p className="text-sm font-medium truncate">
                           {file.filename}
@@ -840,7 +843,7 @@ export default function PortalProjectDetailPage() {
                           }`}
                         >
                           {/* Header row */}
-                          <div className="flex items-center justify-between">
+                          <div className="flex items-start justify-between gap-2 flex-wrap sm:flex-nowrap">
                             <button
                               onClick={() => setViewingDoc(doc)}
                               className="flex items-center gap-3 min-w-0 text-left cursor-pointer flex-1"

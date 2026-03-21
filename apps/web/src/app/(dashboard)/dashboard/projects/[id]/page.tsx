@@ -7,7 +7,7 @@ import { useConfirm } from "@/components/confirm-modal";
 import { useToast } from "@/components/toast";
 import { ProjectDetailSkeleton } from "@/components/skeletons";
 import { useRouter } from "next/navigation";
-import { Archive, ArchiveRestore, Trash2, Calendar } from "lucide-react";
+import { Archive, ArchiveRestore, Trash2, Calendar, ChevronDown } from "lucide-react";
 import { track } from "@/lib/track";
 import { StatusPipeline } from "./components/status-pipeline";
 import { ClientAssignment } from "./components/client-assignment";
@@ -100,7 +100,7 @@ function DateField({
           type="button"
           disabled={disabled}
           onClick={() => inputRef.current?.showPicker()}
-          className="text-sm bg-transparent border border-[var(--border)] rounded px-2 py-1 w-[170px] text-right disabled:opacity-50 cursor-pointer hover:border-[var(--muted-foreground)] transition-colors"
+          className="text-sm bg-transparent border border-[var(--border)] rounded px-2 py-1 w-[140px] sm:w-[170px] text-right disabled:opacity-50 cursor-pointer hover:border-[var(--muted-foreground)] transition-colors"
         >
           {value ? formatDateDisplay(value) : <span className="text-[var(--muted-foreground)]">Select date</span>}
         </button>
@@ -250,10 +250,126 @@ export default function ProjectDetailPage() {
 
   const assignedIds = new Set((project.clients ?? []).map((c) => c.userId));
 
+  const sidebarDetails = (
+    <>
+      <ClientAssignment
+        clients={clients}
+        assignedIds={assignedIds}
+        onToggle={handleClientToggle}
+        onRemove={handleRemoveClient}
+        disabled={isArchived}
+      />
+
+      <div className="border-t border-[var(--border)]" />
+
+      <div className="space-y-1.5">
+        <h2 className="text-xs font-medium uppercase tracking-wider text-[var(--muted-foreground)] flex items-center gap-1.5 mb-2">
+          <Calendar size={12} />
+          Timeline
+        </h2>
+        <DateField
+          label="Start"
+          value={project.startDate ? project.startDate.slice(0, 10) : ""}
+          onChange={(val) => handleDateChange("startDate", val)}
+          disabled={isArchived}
+        />
+        <DateField
+          label="End"
+          value={project.endDate ? project.endDate.slice(0, 10) : ""}
+          onChange={(val) => handleDateChange("endDate", val)}
+          disabled={isArchived}
+        />
+        {project.endDate && !isArchived && (() => {
+          const now = new Date();
+          const end = new Date(project.endDate);
+          const diffMs = end.getTime() - now.getTime();
+          const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+          if (diffDays < 0) {
+            return (
+              <p className="text-xs text-red-500 font-medium">
+                {Math.abs(diffDays)} day{Math.abs(diffDays) !== 1 ? "s" : ""} overdue
+              </p>
+            );
+          }
+          if (diffDays === 0) {
+            return <p className="text-xs text-amber-600 font-medium">Due today</p>;
+          }
+          return (
+            <p className={`text-xs font-medium ${diffDays <= 7 ? "text-amber-600" : "text-[var(--muted-foreground)]"}`}>
+              {diffDays} day{diffDays !== 1 ? "s" : ""} left
+            </p>
+          );
+        })()}
+      </div>
+
+      {isOwner && (
+        <>
+          <div className="border-t border-[var(--border)]" />
+          <button
+            onClick={handleDelete}
+            className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-600 transition-colors"
+          >
+            <Trash2 size={13} />
+            Delete project
+          </button>
+        </>
+      )}
+    </>
+  );
+
+  const currentStatusObj = statuses.find((s) => s.slug === project.status);
+
+  const tabBar = (
+    <div className="relative mb-6 -mx-1">
+      <div className="flex overflow-x-auto px-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`px-3 sm:px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-colors relative after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:rounded-full ${
+              activeTab === tab.id
+                ? "text-[var(--primary)] after:bg-[var(--primary)]"
+                : "text-[var(--muted-foreground)] hover:text-[var(--foreground)] after:bg-transparent"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-[var(--border)] -z-10" />
+    </div>
+  );
+
+  const tabContent = (
+    <>
+      {activeTab === "tasks" && (
+        <TasksSection projectId={id} isArchived={isArchived} />
+      )}
+      {activeTab === "updates" && (
+        <UpdatesSection projectId={id} isArchived={isArchived} onFileChange={loadProject} />
+      )}
+      {activeTab === "files" && (
+        <FilesSection
+          projectId={id}
+          isArchived={isArchived}
+          files={project.files}
+          onFileChange={loadProject}
+          projectClients={clients.filter((c) => assignedIds.has(c.userId))}
+        />
+      )}
+      {activeTab === "invoices" && (
+        <InvoicesSection projectId={id} isArchived={isArchived} />
+      )}
+      {activeTab === "notes" && (
+        <NotesSection projectId={id} isArchived={isArchived} />
+      )}
+    </>
+  );
+
   return (
-    <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
+    <div className="flex flex-col lg:flex-row gap-4 lg:gap-8 items-start">
       {/* Left sidebar — project metadata */}
-      <aside className="w-full lg:w-72 lg:shrink-0 lg:sticky lg:top-8 space-y-4">
+      <aside className="w-full lg:w-72 lg:shrink-0 lg:sticky lg:top-8 space-y-3 lg:space-y-4">
         {error && (
           <div className="p-3 text-sm text-red-600 bg-red-50 rounded-lg">{error}</div>
         )}
@@ -291,116 +407,61 @@ export default function ProjectDetailPage() {
           </p>
         )}
 
-        <StatusPipeline
-          statuses={statuses}
-          currentStatus={project.status}
-          onStatusChange={handleStatusChange}
-          disabled={isArchived}
-        />
-
-        <ClientAssignment
-          clients={clients}
-          assignedIds={assignedIds}
-          onToggle={handleClientToggle}
-          onRemove={handleRemoveClient}
-          disabled={isArchived}
-        />
-
-        <div className="border-t border-[var(--border)]" />
-
-        <div className="space-y-1.5">
-          <h2 className="text-xs font-medium uppercase tracking-wider text-[var(--muted-foreground)] flex items-center gap-1.5 mb-2">
-            <Calendar size={12} />
-            Timeline
-          </h2>
-          <DateField
-            label="Start"
-            value={project.startDate ? project.startDate.slice(0, 10) : ""}
-            onChange={(val) => handleDateChange("startDate", val)}
-            disabled={isArchived}
-          />
-          <DateField
-            label="End"
-            value={project.endDate ? project.endDate.slice(0, 10) : ""}
-            onChange={(val) => handleDateChange("endDate", val)}
-            disabled={isArchived}
-          />
-          {project.endDate && !isArchived && (() => {
-            const now = new Date();
-            const end = new Date(project.endDate);
-            const diffMs = end.getTime() - now.getTime();
-            const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-            if (diffDays < 0) {
-              return (
-                <p className="text-xs text-red-500 font-medium">
-                  {Math.abs(diffDays)} day{Math.abs(diffDays) !== 1 ? "s" : ""} overdue
+        {/* Mobile: collapsible details card */}
+        <div className="lg:hidden">
+          <details className="group border border-[var(--border)] rounded-xl">
+            <summary className="flex items-center justify-between px-3 py-2.5 cursor-pointer list-none select-none [&::-webkit-details-marker]:hidden">
+              <div className="flex items-center gap-2">
+                {currentStatusObj && (
+                  <span
+                    className="px-2.5 py-0.5 rounded-full text-xs font-medium"
+                    style={{ backgroundColor: currentStatusObj.color, color: "#fff" }}
+                  >
+                    {currentStatusObj.name}
+                  </span>
+                )}
+                <span className="text-xs text-[var(--muted-foreground)]">Details</span>
+              </div>
+              <ChevronDown
+                size={14}
+                className="text-[var(--muted-foreground)] transition-transform group-open:rotate-180 shrink-0"
+              />
+            </summary>
+            <div className="px-3 pb-3 space-y-3 border-t border-[var(--border)] pt-3">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wider text-[var(--muted-foreground)] mb-2">
+                  Status
                 </p>
-              );
-            }
-            if (diffDays === 0) {
-              return <p className="text-xs text-amber-600 font-medium">Due today</p>;
-            }
-            return (
-              <p className={`text-xs font-medium ${diffDays <= 7 ? "text-amber-600" : "text-[var(--muted-foreground)]"}`}>
-                {diffDays} day{diffDays !== 1 ? "s" : ""} left
-              </p>
-            );
-          })()}
+                <StatusPipeline
+                  statuses={statuses}
+                  currentStatus={project.status}
+                  onStatusChange={handleStatusChange}
+                  disabled={isArchived}
+                />
+              </div>
+              {sidebarDetails}
+            </div>
+          </details>
         </div>
 
-        {isOwner && (
-          <>
-            <div className="border-t border-[var(--border)]" />
-            <button
-              onClick={handleDelete}
-              className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-600 transition-colors"
-            >
-              <Trash2 size={13} />
-              Delete project
-            </button>
-          </>
-        )}
+        {/* Desktop: show status + details inline */}
+        <div className="hidden lg:block">
+          <StatusPipeline
+            statuses={statuses}
+            currentStatus={project.status}
+            onStatusChange={handleStatusChange}
+            disabled={isArchived}
+          />
+        </div>
+        <div className="hidden lg:contents">
+          {sidebarDetails}
+        </div>
       </aside>
 
-      {/* Right content area — tabbed sections */}
+      {/* Tabbed content area */}
       <div className="flex-1 min-w-0">
-        <div className="flex overflow-x-auto border-b border-[var(--border)] mb-6 -mx-1 px-1">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-3 sm:px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${
-                activeTab === tab.id
-                  ? "border-[var(--primary)] text-[var(--primary)]"
-                  : "border-transparent text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:border-[var(--border)]"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        {activeTab === "tasks" && (
-          <TasksSection projectId={id} isArchived={isArchived} />
-        )}
-        {activeTab === "updates" && (
-          <UpdatesSection projectId={id} isArchived={isArchived} onFileChange={loadProject} />
-        )}
-        {activeTab === "files" && (
-          <FilesSection
-            projectId={id}
-            isArchived={isArchived}
-            files={project.files}
-            onFileChange={loadProject}
-            projectClients={clients.filter((c) => assignedIds.has(c.userId))}
-          />
-        )}
-        {activeTab === "invoices" && (
-          <InvoicesSection projectId={id} isArchived={isArchived} />
-        )}
-        {activeTab === "notes" && (
-          <NotesSection projectId={id} isArchived={isArchived} />
-        )}
+        {tabBar}
+        {tabContent}
       </div>
     </div>
   );

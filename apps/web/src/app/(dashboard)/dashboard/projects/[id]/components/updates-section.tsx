@@ -328,7 +328,7 @@ export function UpdatesSection({
                 {!isArchived && (
                   <button
                     onClick={() => handleDelete(entry.id)}
-                    className="flex items-center gap-1 text-xs text-red-500 hover:underline"
+                    className="flex items-center gap-1 px-2 py-1 text-xs text-red-500 hover:underline"
                   >
                     <Trash2 size={12} />
                     Delete
@@ -350,10 +350,10 @@ export function UpdatesSection({
                       ? handleAttachmentDownload(entry.fileId, entry.attachmentName || "download")
                       : window.open(attachmentSrc, "_blank")
                   }
-                  className="mt-3 flex items-center gap-2 px-3 py-2 border border-[var(--border)] rounded-lg text-sm hover:bg-[var(--muted)] transition-colors w-fit"
+                  className="mt-3 flex items-center gap-2 px-3 py-2 border border-[var(--border)] rounded-lg text-sm hover:bg-[var(--muted)] transition-colors w-full sm:w-fit"
                 >
                   <FileText size={16} className="text-[var(--muted-foreground)] shrink-0" />
-                  <span className="truncate max-w-[200px]">{entry.attachmentName || "Download"}</span>
+                  <span className="truncate min-w-0 flex-1">{entry.attachmentName || "Download"}</span>
                   <Download size={14} className="text-[var(--muted-foreground)] shrink-0" />
                 </button>
               )}

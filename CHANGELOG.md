@@ -2,6 +2,10 @@
 
 All notable changes to Atrium will be documented in this file.
 
+## [1.3.2] — 2026-03-20
+
+- Mobile-responsive dashboard and portal — collapsible sidebar, adaptive layouts, and improved touch targets across all project views.
+
 ## [1.3.1] — 2026-03-18
 
 ### Breaking Changes

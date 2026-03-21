@@ -97,7 +97,7 @@ export default async function PortalLayout({
         </Link>
         <SignOutButton />
       </header>
-      <main className="max-w-6xl mx-auto p-8">{children}</main>
+      <main className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">{children}</main>
     </div>
   );
 }

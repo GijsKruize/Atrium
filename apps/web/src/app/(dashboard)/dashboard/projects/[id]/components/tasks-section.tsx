@@ -175,20 +175,20 @@ export function TasksSection({
           <div className="flex gap-2">
             <button
               onClick={() => setTaskType("checkbox")}
-              className={`px-3 py-1 rounded-lg text-sm border ${taskType === "checkbox" ? "bg-[var(--primary)] text-white border-[var(--primary)]" : "border-[var(--border)] hover:bg-[var(--muted)]"}`}
+              className={`px-3 py-2 rounded-lg text-sm border ${taskType === "checkbox" ? "bg-[var(--primary)] text-white border-[var(--primary)]" : "border-[var(--border)] hover:bg-[var(--muted)]"}`}
             >
               Checkbox
             </button>
             <button
               onClick={() => setTaskType("decision")}
-              className={`px-3 py-1 rounded-lg text-sm border ${taskType === "decision" ? "bg-[var(--primary)] text-white border-[var(--primary)]" : "border-[var(--border)] hover:bg-[var(--muted)]"}`}
+              className={`px-3 py-2 rounded-lg text-sm border ${taskType === "decision" ? "bg-[var(--primary)] text-white border-[var(--primary)]" : "border-[var(--border)] hover:bg-[var(--muted)]"}`}
             >
               Decision
             </button>
           </div>
 
           {taskType === "checkbox" ? (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-col gap-2">
               <input
                 type="text"
                 value={newTitle}
@@ -197,21 +197,23 @@ export function TasksSection({
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleAdd();
                 }}
-                className="flex-1 min-w-0 px-3 py-1.5 border border-[var(--border)] rounded-lg bg-[var(--background)] text-sm"
+                className="w-full px-3 py-2 border border-[var(--border)] rounded-lg bg-[var(--background)] text-sm"
               />
-              <input
-                type="date"
-                value={newDueDate}
-                onChange={(e) => setNewDueDate(e.target.value)}
-                className="px-3 py-1.5 border border-[var(--border)] rounded-lg bg-[var(--background)] text-sm"
-              />
-              <button
-                onClick={handleAdd}
-                disabled={!newTitle.trim()}
-                className="px-3 py-1.5 bg-[var(--primary)] text-white rounded-lg text-sm hover:opacity-90 disabled:opacity-50"
-              >
-                Add
-              </button>
+              <div className="flex gap-2">
+                <input
+                  type="date"
+                  value={newDueDate}
+                  onChange={(e) => setNewDueDate(e.target.value)}
+                  className="flex-1 min-w-0 px-3 py-2 border border-[var(--border)] rounded-lg bg-[var(--background)] text-sm"
+                />
+                <button
+                  onClick={handleAdd}
+                  disabled={!newTitle.trim()}
+                  className="px-4 py-2 bg-[var(--primary)] text-white rounded-lg text-sm hover:opacity-90 disabled:opacity-50"
+                >
+                  Add
+                </button>
+              </div>
             </div>
           ) : (
             <div className="space-y-2 p-3 border border-[var(--border)] rounded-lg">
@@ -296,7 +298,7 @@ export function TasksSection({
                       !isArchived && (
                         <button
                           onClick={() => handleCloseVoting(task.id)}
-                          className="flex items-center gap-1 px-2 py-1 text-xs border border-[var(--border)] rounded-lg hover:bg-[var(--muted)]"
+                          className="flex items-center gap-1 px-2 py-1.5 text-xs border border-[var(--border)] rounded-lg hover:bg-[var(--muted)]"
                         >
                           <Lock size={12} />
                           Close Voting
@@ -306,9 +308,9 @@ export function TasksSection({
                     {!isArchived && (
                       <button
                         onClick={() => handleDelete(task.id)}
-                        className="p-1 text-[var(--muted-foreground)] hover:text-red-500 transition-colors"
+                        className="p-2 text-[var(--muted-foreground)] hover:text-red-500 transition-colors"
                       >
-                        <Trash2 size={12} />
+                        <Trash2 size={14} />
                       </button>
                     )}
                   </div>
@@ -355,7 +357,7 @@ export function TasksSection({
             </button>
 
             {editingId === task.id ? (
-              <div className="flex-1 flex flex-wrap items-center gap-2 min-w-0">
+              <div className="flex-1 flex flex-col gap-2 min-w-0">
                 <input
                   type="text"
                   value={editingTitle}
@@ -365,26 +367,28 @@ export function TasksSection({
                     if (e.key === "Escape") setEditingId(null);
                   }}
                   autoFocus
-                  className="flex-1 min-w-0 px-2 py-1 border border-[var(--border)] rounded bg-[var(--background)] text-sm"
+                  className="w-full px-2 py-1.5 border border-[var(--border)] rounded bg-[var(--background)] text-sm"
                 />
-                <input
-                  type="date"
-                  value={editingDueDate}
-                  onChange={(e) => setEditingDueDate(e.target.value)}
-                  className="px-2 py-1 border border-[var(--border)] rounded bg-[var(--background)] text-sm"
-                />
-                <button
-                  onClick={() => handleUpdate(task.id)}
-                  className="text-sm text-[var(--primary)] hover:underline"
-                >
-                  Save
-                </button>
-                <button
-                  onClick={() => setEditingId(null)}
-                  className="text-sm text-[var(--muted-foreground)] hover:underline"
-                >
-                  Cancel
-                </button>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="date"
+                    value={editingDueDate}
+                    onChange={(e) => setEditingDueDate(e.target.value)}
+                    className="flex-1 min-w-0 px-2 py-1.5 border border-[var(--border)] rounded bg-[var(--background)] text-sm"
+                  />
+                  <button
+                    onClick={() => handleUpdate(task.id)}
+                    className="px-3 py-1.5 text-sm text-[var(--primary)] hover:underline"
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={() => setEditingId(null)}
+                    className="px-1 py-1.5 text-sm text-[var(--muted-foreground)] hover:underline"
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
             ) : (
               <>
@@ -399,22 +403,22 @@ export function TasksSection({
                   </span>
                 )}
                 {!isArchived && (
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 shrink-0">
                     <button
                       onClick={() => {
                         setEditingId(task.id);
                         setEditingTitle(task.title);
                         setEditingDueDate(task.dueDate ? task.dueDate.split("T")[0] : "");
                       }}
-                      className="p-1 text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors"
+                      className="p-2 text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors"
                     >
-                      <Pencil size={12} />
+                      <Pencil size={14} />
                     </button>
                     <button
                       onClick={() => handleDelete(task.id)}
-                      className="p-1 text-[var(--muted-foreground)] hover:text-red-500 transition-colors"
+                      className="p-2 text-[var(--muted-foreground)] hover:text-red-500 transition-colors"
                     >
-                      <Trash2 size={12} />
+                      <Trash2 size={14} />
                     </button>
                   </div>
                 )}
