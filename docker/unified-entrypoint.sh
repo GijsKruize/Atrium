@@ -43,7 +43,7 @@ if [ "${SKIP_DB_PUSH}" = "true" ]; then
 else
   echo "Syncing database schema..."
   MIGRATION_URL="${DIRECT_URL:-$DATABASE_URL}"
-  DATABASE_URL="$MIGRATION_URL" ./packages/database/node_modules/.bin/prisma db push --schema=./packages/database/prisma/schema.prisma --skip-generate
+  DATABASE_URL="$MIGRATION_URL" ./packages/database/node_modules/.bin/prisma db push --schema=./packages/database/prisma/schema.prisma --skip-generate --accept-data-loss
   echo "Database schema synced."
 
   # Apply Row Level Security (locks out Supabase anon/authenticated roles)
