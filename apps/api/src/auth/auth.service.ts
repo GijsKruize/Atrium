@@ -81,7 +81,6 @@ export class AuthService {
       emailVerification: {
         sendOnSignUp: true,
         autoSignInAfterVerification: true,
-        callbackURL: `${webUrl}/verify-email?verified=true`,
         sendVerificationEmail: async ({ user, url }) => {
           const html = await render(VerifyEmail({ url }));
           await this.mail.send(
