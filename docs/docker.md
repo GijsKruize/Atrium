@@ -102,50 +102,9 @@ The database schema is automatically applied on startup. To skip this (e.g. when
 | `/var/lib/postgresql/data` | Built-in PostgreSQL data (not needed with external DB) |
 | `/app/uploads` | Uploaded files (not needed with S3/MinIO/R2 storage) |
 
-## Unraid / Plain HTTP Setup
+## Platform Guides
 
-If you're accessing Atrium over plain HTTP (no HTTPS reverse proxy), you need to set `SECURE_COOKIES=false`. Without this, the browser will silently reject authentication and CSRF cookies, causing 403 errors on form submissions.
-
-> **A reverse proxy with HTTPS (Caddy, Nginx Proxy Manager, Traefik) is strongly recommended.** Only disable secure cookies if you have no HTTPS anywhere in the chain.
-
-### Unraid Steps
-
-1. In the Unraid Docker UI, click **Add Container**
-2. Set the **Repository** to `vibralabs/atrium:latest`
-3. Under **Port Mappings**, map your desired host port (e.g., `4747`) to container port `8080`
-4. Add the following **Environment Variables**:
-   - `BETTER_AUTH_SECRET` — a random string of at least 32 characters (generate one with `openssl rand -base64 32` in the terminal)
-   - `SECURE_COOKIES` — set to `false`
-5. Add the following **Volume Mappings** (set the host paths to your appdata directory):
-   - `/mnt/user/appdata/atrium/db` → `/var/lib/postgresql/data`
-   - `/mnt/user/appdata/atrium/uploads` → `/app/uploads`
-6. Set **Network Type** to `Bridge`
-7. Click **Apply**
-
-Open `http://your-unraid-ip:4747` and create your account.
-
-If you later add an HTTPS reverse proxy, remove `SECURE_COOKIES=false` or set it to `true`.
-
-### Docker Compose (Plain HTTP)
-
-```yaml
-services:
-  atrium:
-    image: vibralabs/atrium:latest
-    ports:
-      - "8080:8080"
-    environment:
-      BETTER_AUTH_SECRET: "change-me-to-a-random-string-at-least-32-chars"
-      SECURE_COOKIES: "false"
-    volumes:
-      - atrium-db:/var/lib/postgresql/data
-      - atrium-uploads:/app/uploads
-    restart: unless-stopped
-
-volumes:
-  atrium-db:
-  atrium-uploads:
-```
+- [Unraid](unraid.md) — step-by-step setup for Unraid with plain HTTP
 
 ## Building from Source
 
