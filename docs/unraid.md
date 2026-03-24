@@ -19,9 +19,13 @@ Map your desired host port to container port `8080`:
 
 | Host Port | Container Port |
 |---|---|
-| `4747` (or any available port) | `8080` |
+| `8080` (or any available port) | `8080` |
+
+> **Important:** The container port must always be `8080` — that's what Atrium listens on internally. Only change the host port if `8080` is already in use on your server.
 
 ### Environment Variables
+
+When adding environment variables in Unraid, make sure both the **Name/Key** field and **Value** field are filled in. If the Key field is empty, Unraid won't pass the variable to the container.
 
 | Variable | Value | Notes |
 |---|---|---|
@@ -83,17 +87,30 @@ You can remove the `/app/uploads` volume mapping when using S3 storage.
 
 ## Updating
 
-1. In the Unraid Docker UI, click **Check for Updates** or pull `vibralabs/atrium:latest`
-2. Restart the container
+1. In the Unraid Docker UI, click the container icon and select **Force Update** to pull the latest image
+2. The container will restart automatically
 3. Database migrations run automatically on startup
+
+> **Note:** Simply restarting the container may not pull the newest image. Use **Force Update** to ensure you have the latest version.
 
 ## Troubleshooting
 
 ### 403 "Invalid or missing CSRF token"
 Make sure `SECURE_COOKIES` is set to `false` if you're accessing over plain HTTP.
 
-### Container won't start
-Check the container logs in the Unraid Docker UI. The most common issue is a missing or too-short `BETTER_AUTH_SECRET` (must be at least 32 characters).
+### "Missing required environment variable: BETTER_AUTH_SECRET"
+The API won't start without this. Check that the env var has both the **Key** (`BETTER_AUTH_SECRET`) and **Value** filled in within the Unraid container config. If the Key field is empty, Unraid silently drops the variable.
+
+### API failed to start / 502 errors
+The web UI may load but API calls return 502. Check the container logs — scroll up from "API failed to start" to find the actual error. Common causes:
+- Missing `BETTER_AUTH_SECRET` (see above)
+- Secret is shorter than 32 characters
+
+### Container exits with code 1
+Check logs for the specific error. Usually a missing or invalid environment variable.
 
 ### Data not persisting after restart
 Verify your volume mappings point to `/mnt/user/appdata/atrium/db` and `/mnt/user/appdata/atrium/uploads`.
+
+### Port not accessible
+Make sure the **container port** is `8080` (not your custom port). The host port is what you access from your browser; the container port is always `8080`.
